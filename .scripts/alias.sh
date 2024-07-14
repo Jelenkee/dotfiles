@@ -21,7 +21,6 @@ up() {
 
 deps() {
     up
-    _install_package "fzf"
     _install_package "fd"
     _install_package "fd-find"
     if [ ! "$(type -t fdfind)" == "" ]; then
@@ -35,6 +34,19 @@ deps() {
 }
 
 zz() {
+    # subcommands
+    if [ "$1" == "--" ];then
+        if [ "$2" == "list" ];then
+            cat $DF_CD_CACHE_FILE | sort -nr
+            return
+        fi
+        if [ "$2" == "clear" ];then
+            rm $DF_CD_CACHE_FILE
+            touch $DF_CD_CACHE_FILE
+            return
+        fi
+    fi
+
     # special cases
     if [ "$1" == "" ];then
         cd
@@ -60,8 +72,6 @@ zz() {
     
     _search_dir() {
         local dirs=$1
-        local dirs=$(echo $dirs | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2-)
-        
         for dir in $dirs; do
             local bdir=$(basename $dir)
             if [ "${bdir,,}" == "${term,,}" ];then
@@ -80,7 +90,7 @@ zz() {
     }
     
     # cached dirs
-    if _search_dir "$(cat $DF_CD_CACHE_FILE)"; then
+    if _search_dir "$(cat $DF_CD_CACHE_FILE | sort -nr | awk '{print $2}')"; then
         return
     fi
     
@@ -90,7 +100,8 @@ zz() {
     fi
     
     # nested dirs
-    if _search_dir "$(find $HOME -maxdepth 5 -type d | grep -F -i $term)"; then
+    local depth="${DF_Z_HOME_DEPTH:-5}"
+    if [ ! "$depth" == "0" ] && _search_dir "$(find $HOME -maxdepth $depth -type d | grep -F -i $term | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2-)"; then
         return
     fi
     

@@ -1,8 +1,8 @@
-export PROMPT_COMMAND=set_prompt
+export PROMPT_COMMAND=_set_prompt
 _AT_PROMPT=1
 _FIRST_PROMPT=1
 #DF_START_DATE=$(date +%s)
-set_prompt() {
+_set_prompt() {
     local _status="$?"
     local id="${DF_PROMPT_ID}"
     if [ ! "$id" == "" ]; then
@@ -29,8 +29,16 @@ set_prompt() {
     
     local current_dir=$(pwd)
     touch "$DF_CD_CACHE_FILE"
-    if ! grep -F -q -x "$current_dir" "$DF_CD_CACHE_FILE";then
-        echo "$current_dir" >> $DF_CD_CACHE_FILE
+    local line_number=$(grep -F -n "	$current_dir	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
+    if [ ! "$line_number" == "" ];then
+        local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
+        local count=$(echo $line | awk '{print $1}')
+        local count=$(($count+1))
+        # todo check if pwd has changed
+        sed -i "${line_number}d" $DF_CD_CACHE_FILE
+        echo -e "$count\t$current_dir\t" >> $DF_CD_CACHE_FILE
+    else
+        echo -e "1\t$current_dir\t" >> $DF_CD_CACHE_FILE
     fi
     
     _AT_PROMPT=1
@@ -93,7 +101,7 @@ _is_poor_prompt() {
 }
 
 # This will run before any command is executed.
-function PreCommand() {
+function _PreCommand() {
     if [ -z "$_AT_PROMPT" ]; then
         return
     fi
@@ -101,4 +109,4 @@ function PreCommand() {
     
     DF_START_DATE=$(date +%s)
 }
-trap "PreCommand" DEBUG
+trap "_PreCommand" DEBUG
