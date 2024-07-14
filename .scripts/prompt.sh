@@ -27,6 +27,12 @@ set_prompt() {
     PS1+="\[\e[m\]"
     export PS2="\[\e[36m\]> "
     
+    local current_dir=$(pwd)
+    touch "$DF_CD_CACHE_FILE"
+    if ! grep -F -q -x "$current_dir" "$DF_CD_CACHE_FILE";then
+        echo "$current_dir" >> $DF_CD_CACHE_FILE
+    fi
+    
     _AT_PROMPT=1
     if [ -n "$_FIRST_PROMPT" ]; then
         unset _FIRST_PROMPT
