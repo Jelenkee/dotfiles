@@ -1,12 +1,20 @@
-if [ "$(type -t z)" == "" ]; then
-    alias z="zz"
-fi
+_set_alias_if_not_present() {
+    if [ "$(type -t $1)" == "" ]; then
+        alias $1="$2"
+    fi
+}
+
+_set_aliases() {
+    _set_alias_if_not_present "z" "zz"
+    _set_alias_if_not_present "fd" "fdfind"
+    _set_alias_if_not_present "ncdu" "gdu"
+}
 
 up() {
     if [ ! "$(type -t pacman)" == "" ]; then
-        cmd="pacman -Syu"
+        local cmd="pacman -Syu"
         elif [ ! "$(type -t apt)" == "" ]; then
-        cmd="bash -c 'apt update && apt upgrade'"
+        local cmd="bash -c 'apt update && apt upgrade'"
     else
         echo "System not supported"
         return 1;
@@ -14,7 +22,7 @@ up() {
     
     local id=$(id -u)
     if [ ! "$id" == "0" ]; then
-        cmd="sudo $cmd"
+        local cmd="sudo $cmd"
     fi
     bash -c "$cmd"
 }
@@ -23,14 +31,9 @@ deps() {
     up
     _install_package "fd"
     _install_package "fd-find"
-    if [ ! "$(type -t fdfind)" == "" ]; then
-        alias fd="fdfind"
-    fi
     _install_package "micro"
     _install_package "gdu"
-    if [ "$(type -t ncdu)" == "" ]; then
-        alias ncdu="gdu"
-    fi
+    _set_aliases
 }
 
 zz() {
@@ -46,14 +49,10 @@ zz() {
             return
         fi
     fi
-
+    
     # special cases
-    if [ "$1" == "" ];then
+    if [ "$1" == "" ] || [ "$1" == "~" ];then
         cd
-        return
-    fi
-    if [ "$1" == "~" ];then
-        cd $HOME
         return
     fi
     local special_values="- . .."
@@ -132,14 +131,10 @@ erase() {
 }
 
 _install_package() {
-    echo "$#"
-    echo "$0"
-    echo "$1"
-    echo "$2"
     if [ ! "$(type -t pacman)" == "" ]; then
-        cmd="sudo pacman -S --noconfirm $1"
-        elif [ ! "$(type -t apt)" == "" ]; then
-        cmd="sudo apt -y install $1"
+        local cmd="sudo pacman -S --noconfirm $1"
+    elif [ ! "$(type -t apt)" == "" ]; then
+        local cmd="sudo apt -y install $1"
     else
         echo "System not supported"
         return 1;
@@ -147,3 +142,4 @@ _install_package() {
     bash -c "$cmd"
 }
 
+_set_aliases

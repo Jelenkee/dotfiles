@@ -1,7 +1,7 @@
 export PROMPT_COMMAND=_set_prompt
 _AT_PROMPT=1
 _FIRST_PROMPT=1
-#DF_START_DATE=$(date +%s)
+
 _set_prompt() {
     local _status="$?"
     local id="${DF_PROMPT_ID}"
@@ -27,18 +27,18 @@ _set_prompt() {
     PS1+="\[\e[m\]"
     export PS2="\[\e[36m\]> "
     
-    local current_dir=$(pwd)
     touch "$DF_CD_CACHE_FILE"
-    local line_number=$(grep -F -n "	$current_dir	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
-    if [ ! "$line_number" == "" ];then
-        local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
-        local count=$(echo $line | awk '{print $1}')
-        local count=$(($count+1))
-        # todo check if pwd has changed
-        sed -i "${line_number}d" $DF_CD_CACHE_FILE
-        echo -e "$count\t$current_dir\t" >> $DF_CD_CACHE_FILE
-    else
-        echo -e "1\t$current_dir\t" >> $DF_CD_CACHE_FILE
+    if [ ! "$HOME" == "$PWD" ] && [ ! "$last_dir" == "$PWD" ];then
+        local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
+        if [ ! "$line_number" == "" ];then
+            local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
+            local count=$(echo $line | awk '{print $1}')
+            local count=$(($count+1))
+            sed -i "${line_number}d" $DF_CD_CACHE_FILE
+            echo -e "$count\t$PWD\t" >> $DF_CD_CACHE_FILE
+        else
+            echo -e "1\t$PWD\t" >> $DF_CD_CACHE_FILE
+        fi
     fi
     
     _AT_PROMPT=1
@@ -53,7 +53,7 @@ _git_info() {
     local BRANCH=$(git rev-parse --abbrev-ref HEAD 2> /dev/null)
     if [ ! "${BRANCH}" == "" ]
     then
-        STAT=$(_git_status)
+        local STAT=$(_git_status)
         echo " ${BRANCH}${STAT}"
     else
         echo ""
@@ -108,5 +108,6 @@ function _PreCommand() {
     unset _AT_PROMPT
     
     DF_START_DATE=$(date +%s)
+    last_dir="$PWD"
 }
 trap "_PreCommand" DEBUG
