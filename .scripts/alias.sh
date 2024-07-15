@@ -1,3 +1,6 @@
+init() {
+    _set_aliases
+}
 _set_alias_if_not_present() {
     if [ "$(type -t $1)" == "" ]; then
         alias $1="$2"
@@ -190,6 +193,23 @@ erase() {
     fi
 }
 
+upload() {
+    local title=""
+    if [ ! "$1" == "" ];then
+        local text=$(cat $1)
+        local title=$(basename $1)
+    else
+        local text=$(cat)
+    fi
+    if [ "$text" == "" ];then
+        echo "no text"
+        return
+    fi
+    local url=$(curl -v 'https://paste.centos.org/' -X POST  -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "name=$USER" --data-urlencode "title=$title" --data-urlencode "lang=text" --data-urlencode "code=$text" --data-urlencode "expire=1440" --data-urlencode "submit=submit" 2>&1 | grep -iF "location: " | grep -o "https.*")
+    echo $url
+    echo $url | sed 's#/view#/view/raw#'
+}
+
 _install_package() {
     if [ ! "$(type -t pacman)" == "" ]; then
         local cmd="sudo pacman -S --noconfirm $1"
@@ -202,4 +222,4 @@ _install_package() {
     bash -c "$cmd"
 }
 
-_set_aliases
+init
