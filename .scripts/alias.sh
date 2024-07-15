@@ -67,7 +67,70 @@ zz() {
         return
     fi
     
-    local term=$1
+    # short path
+    local term="${1%/}"
+    : 'local first_char="${term:0:1}"
+    local term="${term#/}"
+    local term="${term,,}"
+
+    _match_path() {
+        local real_path=$1
+        echo "r $real_path" | grep -i downl
+        local real_path_lower="${real_path,,}"
+        IFS="/" read -r -a real_parts <<< "${real_path_lower#/}"
+        local success=true
+        for i in "${!real_parts[@]}";do
+            local rbit="${real_parts[$i]}"
+            local tbit="${term_parts[$i]}"
+            if [[ ! "$rbit" == "$tbit"* ]];then
+                local success=false
+            fi
+        done
+        if [ "$success" == true ];then
+            echo $real_path
+        fi
+    }
+
+    if [ "$first_char" == "/" ];then
+        echo "terminus $term"
+        local part_count=$(($(grep -o "/" <<< "$term" | wc -l )+1))
+        IFS="/" read -r -a term_parts <<< "$term"
+        echo "count $part_count"
+        #find $(cd /; pwd) -maxdepth $part_count -mindepth $part_count -type d -exec match_path {} \; 2> /dev/null
+        find $(cd /; pwd) -maxdepth $part_count -mindepth $part_count -type d 2> /dev/null | while read dir; do
+        local match=$(_match_path "$dir");
+        if [ ! "$match" == "" ];then
+            cd $match;
+            return;
+        fi
+        done
+        
+    else
+        echo "term $term"
+        local part_count=$(($(grep -o "/" <<< "$term" | wc -l )+1))
+        IFS="/" read -r -a term_parts <<< "$term"
+        echo "count $part_count"
+        local paths=$(find $(cd .; pwd) -maxdepth $part_count -mindepth $part_count -type d 2> /dev/null)
+        #echo "dsd $paths"
+        for real_path in $paths; do
+            echo "rela $real_path"
+            local real_path_lower="${real_path,,}"
+            IFS="/" read -r -a real_parts <<< "${real_path_lower#/}"
+            local success=true
+            for i in "${!real_parts[@]}";do
+                local rbit="${real_parts[$i]}"
+                local tbit="${term_parts[$i]}"
+                if [[ ! "$rbit" == "$tbit"* ]];then
+                    local success=false
+                fi
+            done
+            if [ "$success" == true ];then
+                cd $real_path
+                return
+            fi
+        done
+    fi'
+    
     
     _search_dir() {
         local dirs=$1
@@ -117,10 +180,7 @@ erase() {
     rm -rf ~/.cargo/registry/cache
     set +x
     if [ ! "$(type -t cargo)" == "" ]; then
-        for f in $(find ~ -name "Cargo.toml"); do
-            cargo clean --manifest-path $f
-            cargo clean -r --manifest-path $f
-        done
+        find ~ -name "Cargo.toml" -exec cargo clean --manifest-path {} \; -exec cargo clean -r --manifest-path {} \;
     fi
     if [ ! "$(type -t pacman)" == "" ]; then
         sudo pacman -Sc
@@ -133,7 +193,7 @@ erase() {
 _install_package() {
     if [ ! "$(type -t pacman)" == "" ]; then
         local cmd="sudo pacman -S --noconfirm $1"
-    elif [ ! "$(type -t apt)" == "" ]; then
+        elif [ ! "$(type -t apt)" == "" ]; then
         local cmd="sudo apt -y install $1"
     else
         echo "System not supported"
