@@ -51,6 +51,14 @@ zz() {
             touch $DF_CD_CACHE_FILE
             return
         fi
+        if [ "$2" == "remove" ];then
+            local dir="$3"
+            if [ "$dir" == "" ];then
+                local dir="$PWD"
+            fi
+            # TODO
+            return
+        fi
     fi
     
     # special cases
@@ -145,7 +153,7 @@ zz() {
             fi
         done
         for dir in $dirs; do
-            if echo "$(basename $dir)" | grep -F -q -i $term ;then
+            if echo "$(basename $dir)" | grep -F -q -i "$term" ;then
                 cd $dir
                 return
             fi
@@ -160,13 +168,13 @@ zz() {
     fi
     
     # local dirs
-    if _search_dir "$(find $PWD -maxdepth 1 -type d | grep -F -i $term)"; then
+    if _search_dir "$(find $PWD -maxdepth 1 -type d | grep -F -i "$term")"; then
         return
     fi
     
     # nested dirs
     local depth="${DF_Z_HOME_DEPTH:-5}"
-    if [ ! "$depth" == "0" ] && _search_dir "$(find $HOME -maxdepth $depth -type d | grep -F -i $term | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2-)"; then
+    if [ ! "$depth" == "0" ] && _search_dir "$(find $HOME -maxdepth $depth -type d | grep -F -i "$term" | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2-)"; then
         return
     fi
     

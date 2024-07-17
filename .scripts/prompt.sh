@@ -16,11 +16,12 @@ _set_prompt() {
     
     local now_date=$(date +%s)
     local diff=$(($now_date-$DF_START_DATE))
+    local time=$(_execution_time $diff)
     export PS1="\[\e[1;36m\]$s1\[\e[1;32m\]$id\[\e[1;32m\]\w"
     # git
     PS1+="\[\e[0;37m\]$(_git_info)"
     # result
-    PS1+="$(_last_result $_status)$(_execution_time $diff)"
+    PS1+="$(_last_result $_status)$time"
     # prompt
     PS1+="\[\e[1;36m\]\n$s2$bracket "
     # reset
@@ -51,20 +52,21 @@ _set_prompt() {
 # get current branch in git repo
 _git_info() {
     local BRANCH=$(git rev-parse --abbrev-ref HEAD 2> /dev/null)
-    if [ ! "${BRANCH}" == "" ]
-    then
-        local STAT=$(_git_status)
+    if [ ! "${BRANCH}" == "" ];then
+        local STAT="$(_git_status2)"
         echo " ${BRANCH}${STAT}"
     else
         echo ""
     fi
 }
 
+
 # get current status of git repo
-_git_status() {
-    local staged=$(git diff --name-only --cached)
-    local changes=$(git diff --name-only)
-    local untracked=$(git status --porcelain | grep '^??')
+_git_status2() {
+    local status=$(git status --porcelain)
+    local staged=$(echo "$status" | grep '^M')
+    local changes=$(echo "$status" | grep '^ M')
+    local untracked=$(echo "$status" | grep '^??')
     local bits=""
     if [ ! "$staged" == "" ]; then
         bits+="+"
