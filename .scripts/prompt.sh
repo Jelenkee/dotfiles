@@ -26,10 +26,10 @@ _set_prompt() {
     PS1+="\[\e[1;36m\]\n$s2$bracket "
     # reset
     PS1+="\[\e[m\]"
-    export PS2="\[\e[36m\]> "
+    export PS2="\[\e[36m\]>\[\e[m\] "
     
     touch "$DF_CD_CACHE_FILE"
-    if [ ! "$HOME" == "$PWD" ] && [ ! "$last_dir" == "$PWD" ];then
+    if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [ ! $PWD == *$'\n'* ];then
         local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
         if [ ! "$line_number" == "" ];then
             local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
@@ -110,6 +110,5 @@ function _PreCommand() {
     unset _AT_PROMPT
     
     DF_START_DATE=$(date +%s)
-    last_dir="$PWD"
 }
 trap "_PreCommand" DEBUG

@@ -1,4 +1,4 @@
-init() {
+_init() {
     _set_aliases
 }
 _set_alias_if_not_present() {
@@ -144,18 +144,22 @@ zz() {
     
     
     _search_dir() {
-        local dirs=$1
-        for dir in $dirs; do
-            local bdir=$(basename $dir)
+        local dirs=("$@")
+        for dir in "${dirs[@]}"; do
+            local bdir=$(basename "$dir")
             if [ "${bdir,,}" == "${term,,}" ];then
-                cd $dir
-                return
+                if [ -d "$dir" ];then
+                    cd "$dir"
+                    return
+                fi
             fi
         done
-        for dir in $dirs; do
-            if echo "$(basename $dir)" | grep -F -q -i "$term" ;then
-                cd $dir
-                return
+        for dir in "${dirs[@]}"; do
+            if echo $(basename "$dir") | grep -F -q -i "$term" ;then
+                if [ -d "$dir" ];then
+                    cd "$dir"
+                    return
+                fi
             fi
         done
         
@@ -163,20 +167,22 @@ zz() {
     }
     
     # cached dirs
-    if _search_dir "$(cat $DF_CD_CACHE_FILE | sort -nr | awk '{print $2}')"; then
+    readarray -t _arr2 < <(cat $DF_CD_CACHE_FILE | sort -nr | awk -F '\t' '{print $2}')
+    if _search_dir "${_arr2[@]}"; then
         return
     fi
-    
+
     # local dirs
-    if _search_dir "$(find $PWD -maxdepth 1 -type d | grep -F -i "$term")"; then
+    readarray -t _arr2 < <(find $PWD -maxdepth 1 -type d)
+    if _search_dir "${_arr2[@]}"; then
         return
     fi
     
     # nested dirs
-    local depth="${DF_Z_HOME_DEPTH:-5}"
+    : 'local depth="${DF_Z_HOME_DEPTH:-5}"
     if [ ! "$depth" == "0" ] && _search_dir "$(find $HOME -maxdepth $depth -type d | grep -F -i "$term" | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2-)"; then
         return
-    fi
+    fi'
     
     echo "No path found"
     return 1
@@ -230,4 +236,4 @@ _install_package() {
     bash -c "$cmd"
 }
 
-init
+_init
