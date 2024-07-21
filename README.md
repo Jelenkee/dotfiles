@@ -29,6 +29,7 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
     * `z -- list` - list history
     * `z -- clear` - clear history
 * `erase` - removes cache, trash and more stuff that uses disk space
+* `upload` - upload small files for a day
 
 ## Env
 * `DF_POOR_PROMPT=1` to disable special glyphs

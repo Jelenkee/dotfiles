@@ -16,7 +16,7 @@ _set_aliases() {
 up() {
     if [ ! "$(type -t pacman)" == "" ]; then
         local cmd="pacman -Syu"
-        elif [ ! "$(type -t apt)" == "" ]; then
+    elif [ ! "$(type -t apt)" == "" ]; then
         local cmd="bash -c 'apt update && apt upgrade'"
     else
         echo "System not supported"
@@ -201,7 +201,7 @@ erase() {
     fi
     if [ ! "$(type -t pacman)" == "" ]; then
         sudo pacman -Sc
-        elif [ ! "$(type -t apt)" == "" ]; then
+    elif [ ! "$(type -t apt)" == "" ]; then
         sudo apt autoremove
         sudo apt clean
     fi

@@ -64,8 +64,8 @@ _git_info() {
 # get current status of git repo
 _git_status2() {
     local status=$(git status --porcelain)
-    local staged=$(echo "$status" | grep '^M')
-    local changes=$(echo "$status" | grep '^ M')
+    local staged=$(echo "$status" | grep '^[A-Z] ')
+    local changes=$(echo "$status" | grep '^ [A-Z]')
     local untracked=$(echo "$status" | grep '^??')
     local bits=""
     if [ ! "$staged" == "" ]; then
