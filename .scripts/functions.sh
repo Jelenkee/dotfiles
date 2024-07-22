@@ -1,3 +1,7 @@
+function mkd() {
+	mkdir -p "$@" && cd "$_";
+}
+
 up() {
     if [ ! "$(type -t yay)" == "" ]; then
         local cmd="yay"

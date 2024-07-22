@@ -1,5 +1,11 @@
 _init() {
     _set_aliases
+    alias ..="cd .."
+    alias dl="cd ~/Downloads"
+
+    if [ ! "$(type -t netstat)" == "" ]; then
+        alias ports="netstat -tupln"
+    fi
 }
 _set_alias_if_not_present() {
     if [ "$(type -t $1)" == "" ]; then
