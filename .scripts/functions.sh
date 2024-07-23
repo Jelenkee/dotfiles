@@ -37,6 +37,11 @@ ebrc() {
     eval $EDITOR ~/.bashrc
 }
 
+serve() {
+    local port="${1:-9000}"
+    python3 -m http.server $port
+}
+
 zz() {
     # subcommands
     if [ "$1" == "--" ]; then

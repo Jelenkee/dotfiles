@@ -19,6 +19,7 @@ _init() {
     fi
 
     alias g="git"
+    alias sudo="sudo "
 
 }
 _set_alias_if_not_present() {
