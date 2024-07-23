@@ -1,5 +1,5 @@
 function mkd() {
-	mkdir -p "$@" && cd "$_";
+    mkdir -p "$@" && cd "$_"
 }
 
 up() {
@@ -11,9 +11,9 @@ up() {
         local cmd="sudo apt update && sudo apt upgrade"
     else
         echo "System not supported"
-        return 1;
+        return 1
     fi
-    
+
     bash -c "$cmd"
 }
 
@@ -23,53 +23,59 @@ deps() {
     _install_package "fd-find"
     _install_package "micro"
     _install_package "gdu"
-    
+
     if [ ! "$(type -t _set_aliases)" == "" ]; then
         _set_aliases
     fi
 }
 
+edit() {
+    eval $EDITOR $@
+}
+
+ebrc() {
+    eval $EDITOR ~/.bashrc
+}
+
 zz() {
     # subcommands
-    if [ "$1" == "--" ];then
-        if [ "$2" == "list" ];then
+    if [ "$1" == "--" ]; then
+        if [ "$2" == "list" ]; then
             cat $DF_CD_CACHE_FILE | sort -nr
             return
         fi
-        if [ "$2" == "clear" ];then
+        if [ "$2" == "clear" ]; then
             rm $DF_CD_CACHE_FILE
             touch $DF_CD_CACHE_FILE
             return
         fi
-        if [ "$2" == "remove" ];then
+        if [ "$2" == "remove" ]; then
             local dir="$3"
-            if [ "$dir" == "" ];then
+            if [ "$dir" == "" ]; then
                 local dir="$PWD"
             fi
             # TODO
             return
         fi
     fi
-    
+
     # special cases
-    if [ "$1" == "" ] || [ "$1" == "~" ];then
+    if [ "$1" == "" ] || [ "$1" == "~" ]; then
         cd
         return
     fi
     local special_values="- . .."
-    if echo $special_values | grep -F -q -w $1 ;then
-        echo "spei $1"
+    if echo $special_values | grep -F -q -w $1; then
         cd "$1"
         return
     fi
-    
+
     # correct path
     if [ -d "$1" ]; then
-    echo "k $1"
         cd "$1"
         return
     fi
-    
+
     # short path
     local term="${1%/}"
     : 'local first_char="${term:0:1}"
@@ -133,31 +139,32 @@ zz() {
             fi
         done
     fi'
-    
-    
+
     _search_dir() {
         local dirs=("$@")
         for dir in "${dirs[@]}"; do
             local bdir=$(basename "$dir")
-            if [ "${bdir,,}" == "${term,,}" ];then
-                if [ -d "$dir" ];then
+            if [ "${bdir,,}" == "${term,,}" ]; then
+                if [ -d "$dir" ]; then
                     cd "$dir"
                     return
                 fi
             fi
         done
         for dir in "${dirs[@]}"; do
-            if echo $(basename "$dir") | grep -F -q -i "$term" ;then
-                if [ -d "$dir" ];then
+            if echo $(basename "$dir") | grep -F -q -i "$term"; then
+                if [ -d "$dir" ]; then
                     cd "$dir"
                     return
                 fi
             fi
         done
-        
+
         return 1
     }
-    
+
+    local _arr2
+
     # cached dirs
     readarray -t _arr2 < <(cat $DF_CD_CACHE_FILE | sort -nr | awk -F '\t' '{print $2}')
     if _search_dir "${_arr2[@]}"; then
@@ -169,16 +176,26 @@ zz() {
     if _search_dir "${_arr2[@]}"; then
         return
     fi
-    
+
     # nested dirs
     : 'local depth="${DF_Z_HOME_DEPTH:-5}"
     if [ ! "$depth" == "0" ] && _search_dir "$(find $HOME -maxdepth $depth -type d | grep -F -i "$term" | awk '{ print length, $0 }' | sort -n -s | cut -d" " -f2-)"; then
         return
     fi'
-    
+
     echo "No path found"
     return 1
-    
+
+}
+
+zup() {
+    local steps=${1:-1}
+    local cmd=""
+    for ((i = 0; i < $steps; i++)); do
+        cmd+="../"
+    done
+
+    cd $cmd
 }
 
 erase() {
@@ -201,17 +218,17 @@ erase() {
 
 upload() {
     local title=""
-    if [ ! "$1" == "" ];then
+    if [ ! "$1" == "" ]; then
         local text=$(cat $1)
         local title=$(basename $1)
     else
         local text=$(cat)
     fi
-    if [ "$text" == "" ];then
+    if [ "$text" == "" ]; then
         echo "no text"
         return
     fi
-    local url=$(curl -v 'https://paste.centos.org/' -X POST  -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "name=$USER" --data-urlencode "title=$title" --data-urlencode "lang=text" --data-urlencode "code=$text" --data-urlencode "expire=1440" --data-urlencode "submit=submit" 2>&1 | grep -iF "location: " | grep -o "https.*")
+    local url=$(curl -v 'https://paste.centos.org/' -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode "name=$USER" --data-urlencode "title=$title" --data-urlencode "lang=text" --data-urlencode "code=$text" --data-urlencode "expire=1440" --data-urlencode "submit=submit" 2>&1 | grep -iF "location: " | grep -o "https.*")
     echo $url
     echo $url | sed 's#/view#/view/raw#'
 }
@@ -219,11 +236,11 @@ upload() {
 _install_package() {
     if [ ! "$(type -t pacman)" == "" ]; then
         local cmd="sudo pacman -S --noconfirm $1"
-        elif [ ! "$(type -t apt)" == "" ]; then
+    elif [ ! "$(type -t apt)" == "" ]; then
         local cmd="sudo apt -y install $1"
     else
         echo "System not supported"
-        return 1;
+        return 1
     fi
     bash -c "$cmd"
 }

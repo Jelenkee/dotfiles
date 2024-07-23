@@ -13,9 +13,9 @@ _set_prompt() {
     local s2=$(_is_poor_prompt && echo "" || echo "╰")
     local hourglass=$(_is_poor_prompt && echo "" || echo "⧗")
     #local fancy = "\ue0b6 \ue0b4 • ●"
-    
+
     local now_date=$(date +%s)
-    local diff=$(($now_date-$DF_START_DATE))
+    local diff=$(($now_date - $DF_START_DATE))
     local time=$(_execution_time $diff)
     export PS1="\[\e[1;36m\]$s1\[\e[1;32m\]$id\[\e[1;32m\]\w"
     # git
@@ -27,21 +27,21 @@ _set_prompt() {
     # reset
     PS1+="\[\e[m\]"
     export PS2="\[\e[36m\]>\[\e[m\] "
-    
+
     touch "$DF_CD_CACHE_FILE"
-    if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [ ! $PWD == *$'\n'* ];then
+    if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [ ! $PWD == *$'\n'* ]; then
         local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
-        if [ ! "$line_number" == "" ];then
+        if [ ! "$line_number" == "" ]; then
             local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
             local count=$(echo $line | awk '{print $1}')
-            local count=$(($count+1))
+            local count=$(($count + 1))
             sed -i "${line_number}d" $DF_CD_CACHE_FILE
-            echo -e "$count\t$PWD\t" >> $DF_CD_CACHE_FILE
+            echo -e "$count\t$PWD\t" >>$DF_CD_CACHE_FILE
         else
-            echo -e "1\t$PWD\t" >> $DF_CD_CACHE_FILE
+            echo -e "1\t$PWD\t" >>$DF_CD_CACHE_FILE
         fi
     fi
-    
+
     _AT_PROMPT=1
     if [ -n "$_FIRST_PROMPT" ]; then
         unset _FIRST_PROMPT
@@ -51,15 +51,14 @@ _set_prompt() {
 
 # get current branch in git repo
 _git_info() {
-    local BRANCH=$(git rev-parse --abbrev-ref HEAD 2> /dev/null)
-    if [ ! "${BRANCH}" == "" ];then
+    local BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [ ! "${BRANCH}" == "" ]; then
         local STAT="$(_git_status2)"
         echo " ${BRANCH}${STAT}"
     else
         echo ""
     fi
 }
-
 
 # get current status of git repo
 _git_status2() {
@@ -74,7 +73,7 @@ _git_status2() {
     if [ ! "$changes" == "" ] || [ ! "$untracked" == "" ]; then
         bits+="*"
     fi
-    
+
     if [ ! "$bits" == "" ]; then
         echo -n " $bits"
     else
@@ -108,7 +107,7 @@ function _PreCommand() {
         return
     fi
     unset _AT_PROMPT
-    
+
     DF_START_DATE=$(date +%s)
 }
 trap "_PreCommand" DEBUG

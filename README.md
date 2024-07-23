@@ -6,8 +6,8 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 
 * clone this repo to `~/dotfiles`
 * cd into the repo and run `stow .`
-* open a new terminal or run `echo -e "\nsource ~/.scripts/iniit.sh" >> ~/.bashrc`
-* run `source ~/.bashrc`
+* run `echo -e "\nsource ~/.scripts/iniit.sh" >> ~/.bashrc`
+* open a new terminal or run `source ~/.bashrc`
 
 * ...
 * profit
