@@ -238,6 +238,46 @@ upload() {
     echo $url | sed 's#/view#/view/raw#'
 }
 
+gsw() {
+    if [ "$1" == "" ]; then
+        echo "Missing argument"
+        return 1
+    fi
+
+    local branch=$(git branch -l --format "%(refname:short)" | grep -F -i "$1")
+
+    if [ "$branch" == "" ]; then
+        echo "No branch found"
+        return 1
+    fi
+
+    eval git switch $branch
+}
+
+killport() {
+    if [ "$1" == "" ]; then
+        echo "Missing argument"
+        return 1
+    fi
+
+    local pid=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
+    
+    if [ "$pid" == "" ]; then
+        echo "No PID found"
+        return 1
+    fi
+
+    kill $pid
+
+    local pid2=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
+
+    if [ ! "$pid2" == "" ]; then
+        sleep 1
+        kill -9 $pid2
+    fi
+    
+}
+
 _install_package() {
     if [ ! "$(type -t pacman)" == "" ]; then
         local cmd="sudo pacman -S --noconfirm $1"
