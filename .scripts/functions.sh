@@ -23,6 +23,7 @@ deps() {
     _install_package "fd-find"
     _install_package "micro"
     _install_package "gdu"
+    _install_package "lsof"
 
     if [ ! "$(type -t _set_aliases)" == "" ]; then
         _set_aliases
@@ -40,6 +41,13 @@ ebrc() {
 serve() {
     local port="${1:-9000}"
     python3 -m http.server $port
+}
+
+pwgen() {
+    local len="${1:-16}"
+    local double=$(($len + $len))
+    head -c "$double" < /dev/urandom | base64 -w 0 | tr -d "=+/" | head -c "$len"
+    echo ""
 }
 
 zz() {

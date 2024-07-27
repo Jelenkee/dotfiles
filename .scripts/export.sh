@@ -5,7 +5,7 @@ export HISTCONTROL=ignoreboth
 export HISTIGNORE="&:[ ]*:exit:ls:bg:fg:history:clear"
 
 export LANG=en_US.UTF-8
-__lc=$(locale -a | grep -E -i "^en_\w\w\.utf.+$")
+__lc=$(locale -a | grep -E -i "^en_us\.utf.+$" | head -n 1)
 if [ ! "$__lc" == "" ]; then
     export LC_ALL=$__lc
 fi
