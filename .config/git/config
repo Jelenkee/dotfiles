@@ -1,0 +1,6 @@
+[alias]
+    s = status -s
+[push]
+	autoSetupRemote = true
+[core]
+    editor = micro
