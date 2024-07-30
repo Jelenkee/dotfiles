@@ -1,27 +1,27 @@
-export PROMPT_COMMAND=_set_prompt
+export PROMPT_COMMAND=_df_set_prompt
 _AT_PROMPT=1
 _FIRST_PROMPT=1
 
-_set_prompt() {
+_df_set_prompt() {
     local _status="$?"
     local id="${DF_PROMPT_ID}"
     if [ ! "$id" == "" ]; then
         id+=" "
     fi
-    local bracket=$(_is_poor_prompt && echo ">" || echo "❯")
-    local s1=$(_is_poor_prompt && echo "" || echo "╭")
-    local s2=$(_is_poor_prompt && echo "" || echo "╰")
-    local hourglass=$(_is_poor_prompt && echo "" || echo "⧗")
+    local bracket=$(_df_is_poor_prompt && echo ">" || echo "❯")
+    local s1=$(_df_is_poor_prompt && echo "" || echo "╭")
+    local s2=$(_df_is_poor_prompt && echo "" || echo "╰")
+    local hourglass=$(_df_is_poor_prompt && echo "" || echo "⧗")
     #local fancy = "\ue0b6 \ue0b4 • ●"
 
     local now_date=$(date +%s)
     local diff=$(($now_date - $DF_START_DATE))
-    local time=$(_execution_time $diff)
+    local time=$(_df_execution_time $diff)
     export PS1="\[\e[1;36m\]$s1\[\e[1;32m\]$id\[\e[1;32m\]\w"
     # git
-    PS1+="\[\e[0;37m\]$(_git_info)"
+    PS1+="\[\e[0;37m\]$(_df_git_info)"
     # result
-    PS1+="$(_last_result $_status)$time"
+    PS1+="$(_df_last_result $_status)$time"
     # prompt
     PS1+="\[\e[1;36m\]\n$s2$bracket "
     # reset
@@ -50,10 +50,10 @@ _set_prompt() {
 }
 
 # get current branch in git repo
-_git_info() {
+_df_git_info() {
     local BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
     if [ ! "${BRANCH}" == "" ]; then
-        local STAT="$(_git_status2)"
+        local STAT="$(_df_git_status)"
         echo " ${BRANCH}${STAT}"
     else
         echo ""
@@ -61,7 +61,7 @@ _git_info() {
 }
 
 # get current status of git repo
-_git_status2() {
+_df_git_status() {
     local status=$(git status --porcelain)
     local staged=$(echo "$status" | grep '^[A-Z] ')
     local changes=$(echo "$status" | grep '^ [A-Z]')
@@ -81,7 +81,7 @@ _git_status2() {
     fi
 }
 
-_last_result() {
+_df_last_result() {
     if [ "$1" == "0" ]; then
         echo -n " \[\e[0;32m\]✔"
     else
@@ -89,7 +89,7 @@ _last_result() {
     fi
 }
 
-_execution_time() {
+_df_execution_time() {
     if [ "$1" -ge 5 ]; then
         echo -n " \[\e[m\]${1}s"
     else
@@ -97,7 +97,7 @@ _execution_time() {
     fi
 }
 
-_is_poor_prompt() {
+_df_is_poor_prompt() {
     [ "$DF_POOR_PROMPT" == "1" ]
 }
 

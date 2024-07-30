@@ -1,4 +1,4 @@
-function mkd() {
+mkd() {
     mkdir -p "$@" && cd "$_"
 }
 
@@ -48,6 +48,14 @@ pwgen() {
     local double=$(($len + $len))
     head -c "$double" < /dev/urandom | base64 -w 0 | tr -d "=+/" | head -c "$len"
     echo ""
+}
+
+search() {
+    find $PWD -iname "*${1}*" -type f
+}
+
+searchd() {
+    find $PWD -iname "*${1}*" -type d
 }
 
 zz() {

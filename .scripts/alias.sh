@@ -1,4 +1,4 @@
-_init() {
+_df_init() {
     _set_alias_if_not_present "z" "zz"
     _set_alias_if_not_present "fd" "fdfind"
     _set_alias_if_not_present "ncdu" "gdu"
@@ -29,4 +29,4 @@ _set_alias_if_not_present() {
     fi
 }
 
-_init
+_df_init
