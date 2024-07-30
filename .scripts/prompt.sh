@@ -30,16 +30,7 @@ _df_set_prompt() {
 
     touch "$DF_CD_CACHE_FILE"
     if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [ ! $PWD == *$'\n'* ]; then
-        local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
-        if [ ! "$line_number" == "" ]; then
-            local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
-            local count=$(echo $line | awk '{print $1}')
-            local count=$(($count + 1))
-            sed -i "${line_number}d" $DF_CD_CACHE_FILE
-            echo -e "$count\t$PWD\t" >>$DF_CD_CACHE_FILE
-        else
-            echo -e "1\t$PWD\t" >>$DF_CD_CACHE_FILE
-        fi
+        zz -- add
     fi
 
     _AT_PROMPT=1
