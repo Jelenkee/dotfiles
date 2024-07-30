@@ -8,7 +8,6 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 * cd into the repo and run `stow .`
 * run `echo -e "\nsource ~/.scripts/iniit.sh" >> ~/.bashrc`
 * open a new terminal or run `source ~/.bashrc`
-
 * ...
 * profit
 
@@ -28,10 +27,17 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 * `z`/`zz` - smart search (similar to zoxide)
     * `z -- list` - list history
     * `z -- clear` - clear history
-* `erase` - removes cache, trash and more stuff that uses disk space
 * `upload` - upload small files for a day
+* `mkd` - create dir and cd into it
+* `edit` - edit file
+* `ebrc` - edit ~/.bashrc
+* `serve` - start http file server in current directory
+* `pwgen` - generates password
+* `search` - search files (recursively)
+* `searchd` - search directories (recursively)
+* `killport` - kills process for given port
+* `erase` - removes cache, trash and more stuff that uses disk space
 
 ## Env
 * `DF_POOR_PROMPT=1` to disable special glyphs
 * `DF_PROMPT_ID=XX` to display a custom id
-* `DF_Z_HOME_DEPTH=5` max depth to search for folders (0 to disable)
