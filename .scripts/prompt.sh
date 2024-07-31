@@ -29,7 +29,7 @@ _df_set_prompt() {
     export PS2="\[\e[36m\]>\[\e[m\] "
 
     touch "$DF_CD_CACHE_FILE"
-    if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [ ! $PWD == *$'\n'* ]; then
+    if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [[ ! "$PWD" == *$'\n'* ]]; then
         zz -- add
     fi
 

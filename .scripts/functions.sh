@@ -65,7 +65,7 @@ zup() {
         cmd+="../"
     done
 
-    cd $cmd
+    builtin cd $cmd
 }
 
 erase() {

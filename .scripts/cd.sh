@@ -37,14 +37,13 @@ zz(){
     fi
     
     # default
-    if cd $@ 2> /dev/null; then
+    if builtin cd $@ 2> /dev/null; then
         return
     fi
     
     local args=("$@")
     local _arr2
     
-    # cached dirs
     readarray -t _arr2 < <(cat $DF_CD_CACHE_FILE | sort -nr | awk -F '\t' '{print $2}')
     if _df_search_dir _arr2[@] args[@]; then
         return
@@ -54,9 +53,23 @@ zz(){
     return 1
 }
 
-cc() {
+cd() {
     # default
-    if cd $@ 2> /dev/null; then
+    if builtin cd $@ 2> /dev/null; then
+        return
+    fi
+
+    local args=("$@")
+    local last_arg="${args[-1]}"
+    local len=${#args[@]}
+    local plus_len=$((len + 1))
+
+    local _arr2
+
+    readarray -t -d '' _arr2 < <(find . -mindepth $len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0)
+    local sorted_array=($(printf "%s\n" "${_arr2[@]}" | awk '{ print length, $0 }' | sort -n | cut -d' ' -f2-))
+    printf "%s\n" "${sorted_array[@]}"
+    if _df_search_dir sorted_array[@] args[@]; then
         return
     fi
     
