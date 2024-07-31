@@ -68,7 +68,6 @@ cd() {
 
     readarray -t -d '' _arr2 < <(find . -mindepth $len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0)
     local sorted_array=($(printf "%s\n" "${_arr2[@]}" | awk '{ print length, $0 }' | sort -n | cut -d' ' -f2-))
-    printf "%s\n" "${sorted_array[@]}"
     if _df_search_dir sorted_array[@] args[@]; then
         return
     fi
