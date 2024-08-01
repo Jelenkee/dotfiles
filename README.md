@@ -27,6 +27,7 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 * `z`/`zz` - smart search (similar to zoxide)
     * `z -- list` - list history
     * `z -- clear` - clear history
+* `cd` - smarter cd
 * `upload` - upload small files for a day
 * `mkd` - create dir and cd into it
 * `edit` - edit file

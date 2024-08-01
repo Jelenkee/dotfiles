@@ -11,7 +11,6 @@ _df_set_prompt() {
     local bracket=$(_df_is_poor_prompt && echo ">" || echo "❯")
     local s1=$(_df_is_poor_prompt && echo "" || echo "╭")
     local s2=$(_df_is_poor_prompt && echo "" || echo "╰")
-    local hourglass=$(_df_is_poor_prompt && echo "" || echo "⧗")
     #local fancy = "\ue0b6 \ue0b4 • ●"
 
     local now_date=$(date +%s)
