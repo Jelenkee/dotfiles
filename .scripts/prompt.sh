@@ -12,7 +12,7 @@ _df_set_prompt() {
     local s1=$(_df_is_poor_prompt && echo "" || echo "╭")
     local s2=$(_df_is_poor_prompt && echo "" || echo "╰")
     #local fancy = "\ue0b6 \ue0b4 • ●"
-
+    
     local now_date=$(date +%s)
     local diff=$(($now_date - $DF_START_DATE))
     local time=$(_df_execution_time $diff)
@@ -26,12 +26,9 @@ _df_set_prompt() {
     # reset
     PS1+="\[\e[m\]"
     export PS2="\[\e[36m\]>\[\e[m\] "
-
-    touch "$DF_CD_CACHE_FILE"
-    if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [[ ! "$PWD" == *$'\n'* ]]; then
-        zz -- add
-    fi
-
+    
+    zz -- add
+    
     _AT_PROMPT=1
     if [ -n "$_FIRST_PROMPT" ]; then
         unset _FIRST_PROMPT
@@ -63,7 +60,7 @@ _df_git_status() {
     if [ ! "$changes" == "" ] || [ ! "$untracked" == "" ]; then
         bits+="*"
     fi
-
+    
     if [ ! "$bits" == "" ]; then
         echo -n " $bits"
     else
@@ -97,7 +94,7 @@ function _PreCommand() {
         return
     fi
     unset _AT_PROMPT
-
+    
     DF_START_DATE=$(date +%s)
 }
 trap "_PreCommand" DEBUG

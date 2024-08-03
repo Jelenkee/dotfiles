@@ -3,10 +3,10 @@ zz(){
     if [ "$1" == "--" ]; then
         if [ "$2" == "list" ]; then
             cat $DF_CD_CACHE_FILE | sort -nr
-            elif [ "$2" == "clear" ]; then
+        elif [ "$2" == "clear" ]; then
             rm $DF_CD_CACHE_FILE
             touch $DF_CD_CACHE_FILE
-            elif [ "$2" == "remove" ]; then
+        elif [ "$2" == "remove" ]; then
             local dir="$3"
             if [ "$dir" == "" ]; then
                 dir="$PWD"
@@ -15,16 +15,19 @@ zz(){
             if [ ! "$line_number" == "" ]; then
                 sed -i "${line_number}d" $DF_CD_CACHE_FILE
             fi
-            elif [ "$2" == "add" ]; then
-            local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
-            if [ ! "$line_number" == "" ]; then
-                local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
-                local count=$(echo $line | awk '{print $1}')
-                local count=$(($count + 1))
-                sed -i "${line_number}d" $DF_CD_CACHE_FILE
-                echo -e "$count\t$PWD\t" >>$DF_CD_CACHE_FILE
-            else
-                echo -e "1\t$PWD\t" >>$DF_CD_CACHE_FILE
+        elif [ "$2" == "add" ]; then
+            if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [[ ! "$PWD" == *$'\n'* ]]; then
+                touch "$DF_CD_CACHE_FILE"
+                local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
+                if [ ! "$line_number" == "" ]; then
+                    local line=$(head -n $line_number "$DF_CD_CACHE_FILE" | tail -n 1)
+                    local count=$(echo $line | awk '{print $1}')
+                    local count=$(($count + 1))
+                    sed -i "${line_number}d" $DF_CD_CACHE_FILE
+                    echo -e "$count\t$PWD\t" >>$DF_CD_CACHE_FILE
+                else
+                    echo -e "1\t$PWD\t" >>$DF_CD_CACHE_FILE
+                fi
             fi
         fi
         return
@@ -58,11 +61,16 @@ cd() {
     local len=${#args[@]}
     local plus_len=$((len + 1))
     
+    local _arr1
     local _arr2
     
-    readarray -t -d '' _arr2 < <(find . -mindepth $len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0)
-    local sorted_array=($(printf "%s\n" "${_arr2[@]}" | awk '{c=$0; print gsub("/", "", c), $0 }' | sort -n | cut -d' ' -f2-))
-    if _df_search_dir sorted_array[@] args[@]; then
+    readarray -t -d '' _arr1 < <(find . -mindepth $len -maxdepth $len -type d -iname "*${last_arg}*" -print0)
+    if _df_search_dir _arr1[@] args[@]; then
+        return
+    fi
+    
+    readarray -t -d '' _arr2 < <(find . -mindepth $plus_len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0)
+    if _df_search_dir _arr2[@] args[@]; then
         return
     fi
     
@@ -73,28 +81,51 @@ _df_search_dir() {
     local dirs=("${!1}")
     local terms=("${!2}")
     
-    for dir in "${dirs[@]}"; do
-        local match=true
-        local last_term="${terms[-1]}"
-        if ! echo $(basename "$dir") | grep -F -q -i "$last_term"; then
-            match=false
-            continue
-        fi
-        
-        local len=${#terms[@]}
-        local pre_terms=("${terms[@]:0:$((len - 1))}")
-        
-        for term in "${pre_terms[@]}"; do
-            if ! echo "$dir" | grep -F -q -i "$term"; then
-                match=false
-                break
+    local modes=("sw" "sw." "con")
+    
+    for mode in "${modes[@]}"; do
+        for dir in "${dirs[@]}"; do
+            local match=true
+            local last_term="${terms[-1]}"
+            local base="$(basename "$dir")"
+            
+            case $mode in
+                "sw")
+                    local index=$(echo "$base" | grep -F -i -b -o "$last_term" | head -n 1 | cut -d':' -f1)
+                    if [ ! "$index" == "0" ]; then
+                        continue
+                    fi
+                ;;
+                "sw.")
+                    local index=$(echo "$base" | grep -F -i -b -o "$last_term" | head -n 1 | cut -d':' -f1)
+                    local first="${base:0:1}"
+                    if [ ! "$index" == "1" ] || [ ! "$first" == "." ]; then
+                        continue
+                    fi
+                ;;
+                "con")
+                    if ! echo "$base" | grep -F -q -i "$last_term"; then
+                        continue
+                    fi
+                ;;
+            esac
+            
+            local len=${#terms[@]}
+            local pre_terms=("${terms[@]:0:$((len - 1))}")
+            
+            for term in "${pre_terms[@]}"; do
+                if ! echo "$dir" | grep -F -q -i "$term"; then
+                    match=false
+                    break
+                fi
+            done
+            
+            if [ "$match" == "true" ] && [ -d "$dir" ]; then
+                builtin cd "$dir"
+                return
             fi
         done
-        
-        if [ "$match" == "true" ] && [ -d "$dir" ]; then
-            builtin cd "$dir"
-            return
-        fi
+        echo no match in $mode
     done
     
     return 1
