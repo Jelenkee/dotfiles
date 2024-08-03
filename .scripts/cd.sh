@@ -37,12 +37,26 @@ zz(){
     if builtin cd $@ 2> /dev/null; then
         return
     fi
+
+    local dry=false
+
+    if [ "$1" == "-q" ]; then 
+        dry=true
+        shift
+    fi
     
     local args=("$@")
     local _arr2
-    
+    local dia
+
     readarray -t _arr2 < <(cat $DF_CD_CACHE_FILE | sort -nr | awk -F '\t' '{print $2}')
-    if _df_search_dir _arr2[@] args[@]; then
+    dia=$(_df_search_dir _arr2[@] args[@])
+    if [ ! "$dia" == "" ]; then
+        if [ "$dry" == "true" ]; then
+            echo "$dia"
+        else
+            builtin cd "$dia"
+        fi
         return
     fi
     
@@ -63,14 +77,19 @@ cd() {
     
     local _arr1
     local _arr2
+    local dia
     
     readarray -t -d '' _arr1 < <(find . -mindepth $len -maxdepth $len -type d -iname "*${last_arg}*" -print0)
-    if _df_search_dir _arr1[@] args[@]; then
+    dia=$(_df_search_dir _arr1[@] args[@])
+    if [ ! "$dia" == "" ]; then
+        builtin cd "$dia"
         return
     fi
     
     readarray -t -d '' _arr2 < <(find . -mindepth $plus_len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0)
-    if _df_search_dir _arr2[@] args[@]; then
+    dia=$(_df_search_dir _arr2[@] args[@])
+    if [ ! "$dia" == "" ]; then
+        builtin cd "$dia"
         return
     fi
     
@@ -121,11 +140,10 @@ _df_search_dir() {
             done
             
             if [ "$match" == "true" ] && [ -d "$dir" ]; then
-                builtin cd "$dir"
+                echo "$dir"
                 return
             fi
         done
-        echo no match in $mode
     done
     
     return 1
