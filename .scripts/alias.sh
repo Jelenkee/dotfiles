@@ -4,6 +4,8 @@ _df_init() {
     _set_alias_if_not_present "ncdu" "gdu"
     _set_alias_if_not_present ".." "cd .."
     _set_alias_if_not_present "dl" "cd ~/Downloads"
+    _set_alias_if_not_present "ranger" "yazi"
+    _set_alias_if_not_present "y" "yazi"
 
     if [ ! "$(type -t netstat)" == "" ]; then
         alias ports="netstat -tupln"
