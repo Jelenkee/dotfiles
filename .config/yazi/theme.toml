@@ -1,0 +1,14 @@
+[status]
+separator_open  = ""
+separator_close = ""
+separator_style = { fg = "#45475a", bg = "#45475a" }
+
+[icon]
+globs = []
+dirs  = []
+files = []
+exts  = []
+conds = []
+
+[manager]
+tab_width=15
