@@ -1,31 +1,30 @@
 _df_search_dir() {
     local dirs=("${!1}")
     local terms=("${!2}")
+    local last_term="${terms[-1]}"
+    last_term="${last_term,,}"
     
     local modes=("sw" "sw." "con")
     
     for mode in "${modes[@]}"; do
         for dir in "${dirs[@]}"; do
             local match=true
-            local last_term="${terms[-1]}"
             local base="$(basename "$dir")"
+            base="${base,,}"
             
             case $mode in
                 "sw")
-                    local index=$(echo "$base" | grep -F -i -b -o "$last_term" | head -n 1 | cut -d':' -f1)
-                    if [ ! "$index" == "0" ]; then
+                    if [[ ! "$base" == "$last_term"* ]]; then
                         continue
                     fi
                 ;;
                 "sw.")
-                    local index=$(echo "$base" | grep -F -i -b -o "$last_term" | head -n 1 | cut -d':' -f1)
-                    local first="${base:0:1}"
-                    if [ ! "$index" == "1" ] || [ ! "$first" == "." ]; then
+                    if [[ ! "$base" == ".$last_term"* ]]; then
                         continue
                     fi
                 ;;
                 "con")
-                    if ! echo "$base" | grep -F -q -i "$last_term"; then
+                    if [[ ! "$base" == *"$last_term"* ]]; then
                         continue
                     fi
                 ;;
