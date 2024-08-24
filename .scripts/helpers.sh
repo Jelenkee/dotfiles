@@ -9,7 +9,7 @@ _df_search_dir() {
     for mode in "${modes[@]}"; do
         for dir in "${dirs[@]}"; do
             local match=true
-            local base="$(basename "$dir")"
+            local base="$(_df_basename "$dir")"
             base="${base,,}"
             
             case $mode in
@@ -48,4 +48,15 @@ _df_search_dir() {
     done
     
     return 1
+}
+
+_df_basename() {
+    local path="$1"
+    if [ "$path" == "/" ]; then
+        echo "/"
+        return
+    fi
+    local slash="/"
+    path="${path%/}"
+    echo "${path##*$slash}"
 }

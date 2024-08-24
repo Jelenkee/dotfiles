@@ -24,6 +24,8 @@ local function entry()
 	local target = output.stdout:gsub("\n$", "")
 	if target ~= "" then
 		ya.manager_emit("cd", { target })
+    else
+        ya.notify { title = "", content = "Cannot find " .. value, timeout = 3.0, level = "warn"}
 	end
 end
 

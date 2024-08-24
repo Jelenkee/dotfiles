@@ -8,7 +8,7 @@ export HISTSIZE=1000
 export HISTFILESIZE=10000
 
 export HISTCONTROL=ignoreboth
-export HISTIGNORE="&:[ ]*:exit:ls:bg:fg:history:clear"
+export HISTIGNORE="&:[ ]*:exit:clear"
 
 __lc=$(locale -a | grep -E -i "^en_us\.utf.+$" | head -n 1)
 if [ ! "$__lc" == "" ]; then
@@ -29,5 +29,5 @@ export CLICOLOR=1
 
 shopt -s histappend
 shopt -s checkwinsize
-shopt -s cdspell
+#shopt -s cdspell
 #shopt -s cmdhist

@@ -3,7 +3,6 @@
 source ~/.scripts/helpers.sh
 
 main() {
-
     if [ "$#" -eq 0 ]; then
         return 1
     fi

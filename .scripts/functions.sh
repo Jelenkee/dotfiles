@@ -4,17 +4,19 @@ mkd() {
 
 up() {
     if [ ! "$(type -t yay)" == "" ]; then
-        local cmd="yay"
+        yay
     elif [ ! "$(type -t pacman)" == "" ]; then
-        local cmd="sudo pacman -Syu"
+        sudo pacman -Syu
     elif [ ! "$(type -t apt)" == "" ]; then
-        local cmd="sudo apt update && sudo apt upgrade"
+        sudo apt update && sudo apt upgrade
     else
         echo "System not supported"
         return 1
     fi
 
-    bash -c "$cmd"
+    if [ ! "$(type -t rustup)" == "" ]; then
+        rustup update stable
+    fi
 }
 
 deps() {
@@ -45,9 +47,13 @@ serve() {
 
 pwgen() {
     local len="${1:-16}"
+    local number="${2:-1}"
     local double=$(($len + $len))
-    head -c "$double" < /dev/urandom | base64 -w 0 | tr -d "=+/" | head -c "$len"
-    echo ""
+    for (( i=0; i<$number; i++ ))
+    do
+        head -c "$double" < /dev/urandom | base64 -w 0 | tr -d "=+/" | head -c "$len"
+        echo ""
+    done
 }
 
 search() {
@@ -116,7 +122,7 @@ gsw() {
         return 1
     fi
 
-    eval git switch $branch
+    git switch $branch
 }
 
 killport() {
