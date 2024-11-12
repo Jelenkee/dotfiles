@@ -17,6 +17,10 @@ up() {
     if [ ! "$(type -t rustup)" == "" ]; then
         rustup update stable
     fi
+
+    if [ ! "$(type -t deno)" == "" ]; then
+        deno upgrade
+    fi
 }
 
 deps() {
@@ -85,6 +89,7 @@ erase() {
         find ~ -name "Cargo.toml" -exec cargo clean --manifest-path {} \; -exec cargo clean -r --manifest-path {} \;
     fi
     if [ ! "$(type -t pacman)" == "" ]; then
+        sudo pacman -Rcs $(pacman -Qdtq)
         sudo pacman -Sc
     elif [ ! "$(type -t apt)" == "" ]; then
         sudo apt autoremove
@@ -145,18 +150,20 @@ killport() {
     if [ ! "$pid2" == "" ]; then
         sleep 1
         kill -9 $pid2
-    fi
-    
+    fi    
 }
 
 _install_package() {
     if [ ! "$(type -t pacman)" == "" ]; then
-        local cmd="sudo pacman -S --noconfirm $1"
+        sudo pacman -S --noconfirm "$1"
     elif [ ! "$(type -t apt)" == "" ]; then
-        local cmd="sudo apt -y install $1"
+        sudo apt -y install "$1"
     else
         echo "System not supported"
         return 1
     fi
-    bash -c "$cmd"
+}
+
+paths() {
+    echo $PATH | tr ':' '\n' | sort | uniq
 }
