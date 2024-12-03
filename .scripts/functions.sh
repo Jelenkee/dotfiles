@@ -95,6 +95,9 @@ erase() {
         sudo apt autoremove
         sudo apt clean
     fi
+    if [ ! "$(type -t docker)" == "" ]; then
+        sudo docker image prune -f
+    fi
 }
 
 upload() {

@@ -94,6 +94,7 @@ function _PreCommand() {
         return
     fi
     unset _AT_PROMPT
+    export OLDPWD2="$PWD"
     
     DF_START_DATE=$(date +%s)
 }

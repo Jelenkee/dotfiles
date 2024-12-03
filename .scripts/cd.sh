@@ -16,7 +16,7 @@ zz(){
                 sed -i "${line_number}d" $DF_CD_CACHE_FILE
             fi
         elif [ "$2" == "add" ]; then
-            if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD" == "$PWD" ] && [[ ! "$PWD" == *$'\n'* ]]; then
+            if [ ! "$HOME" == "$PWD" ] && [ ! "$OLDPWD2" == "$PWD" ] && [[ ! "$PWD" == *$'\n'* ]]; then
                 touch "$DF_CD_CACHE_FILE"
                 local line_number=$(grep -F -n "	$PWD	" "$DF_CD_CACHE_FILE" | cut -f1 -d:)
                 if [ ! "$line_number" == "" ]; then
