@@ -79,14 +79,12 @@ zup() {
 }
 
 erase() {
-    set -x
-    rm -rf ~/.cache
+    rm -rf ~/.cache/*
     rm -rf ~/.local/share/Trash/*
     rm -rf ~/.cargo/registry/src
     rm -rf ~/.cargo/registry/cache
-    set +x
     if [ ! "$(type -t cargo)" == "" ]; then
-        find ~ -name "Cargo.toml" -exec cargo clean --manifest-path {} \; -exec cargo clean -r --manifest-path {} \;
+        find ~ -path ~/.rustup -prune -o -path ~/.cargo -prune -o -name 'Cargo.toml' -exec cargo clean --manifest-path {} \; -exec cargo clean -r --manifest-path {} \;
     fi
     if [ ! "$(type -t pacman)" == "" ]; then
         sudo pacman -Rcs $(pacman -Qdtq)
@@ -170,3 +168,26 @@ _install_package() {
 paths() {
     echo $PATH | tr ':' '\n' | sort | uniq
 }
+
+if [ ! "$(type -t docker)" == "" ]; then
+    dokk_exec() {
+        if [ "$1" == "" ]; then
+            echo "Missing argument"
+            return 1
+        fi
+        docker ps > /dev/null
+        docker exec -it $1 /bin/bash || docker exec -it $1 /bin/sh
+    }
+
+    _df_comp_dokk_exec() {
+        local cur prev;
+        cur="${COMP_WORDS[COMP_CWORD]}";
+        prev="${COMP_WORDS[COMP_CWORD-1]}";
+        COMPREPLY=()
+        if [ "$prev" == "dokk_exec" ]; then
+            COMPREPLY=( $(compgen -W "$(docker ps --format '{{.Names}}')" -- ${cur}) )
+        fi
+    }
+    
+    complete -F _df_comp_dokk_exec dokk_exec
+fi
