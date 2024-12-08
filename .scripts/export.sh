@@ -1,4 +1,4 @@
-__local_bin="$HOME/.local/df_bin"
+__local_bin="$HOME/._df/bin"
 if ! echo "$PATH" | grep -q -F "$__local_bin"; then
     PATH="${PATH}:${__local_bin}"
 fi

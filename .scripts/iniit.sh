@@ -11,5 +11,3 @@ mkdir -p -v "$DF_DATA_DIR"
 export DF_CD_CACHE_FILE="${DF_DATA_DIR}/cd_history.txt"
 touch "$DF_CD_CACHE_FILE"
 
-# upload to termbin
-# micro config
