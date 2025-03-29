@@ -1,4 +1,4 @@
-__local_bin="$HOME/._df/bin"
+__local_bin="$HOME/.local/bin"
 if ! echo "$PATH" | grep -q -F "$__local_bin"; then
     PATH="${PATH}:${__local_bin}"
 fi
@@ -29,5 +29,3 @@ export CLICOLOR=1
 
 shopt -s histappend
 shopt -s checkwinsize
-#shopt -s cdspell
-#shopt -s cmdhist

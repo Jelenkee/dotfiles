@@ -4,6 +4,7 @@ for f in $(ls -1 $SCRIPT_DIR | grep -Fv "iniit.sh"); do
     source "$SCRIPT_DIR/$f"
 done
 
+unset f
 unset SCRIPT_DIR
 
 DF_DATA_DIR="$HOME/.local/share/_dotfiles"

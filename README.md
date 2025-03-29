@@ -27,7 +27,7 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
     * `z -- list` - list history
     * `z -- clear` - clear history
 * `cd` - smarter cd
-* `upload` - upload small files for a day
+* `upload` - upload small files for 24 hours
 * `mkd` - create dir and cd into it
 * `edit` - edit file
 * `ebrc` - edit ~/.bashrc

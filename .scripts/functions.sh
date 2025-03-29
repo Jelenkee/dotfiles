@@ -9,6 +9,7 @@ up() {
         sudo pacman -Syu
     elif [ ! "$(type -t apt)" == "" ]; then
         sudo apt update && sudo apt upgrade
+        sudo apt autoremove
     else
         echo "System not supported"
         return 1
@@ -46,7 +47,14 @@ ebrc() {
 
 serve() {
     local port="${1:-9000}"
-    python3 -m http.server $port
+    if [ ! "$(type -t python3)" == "" ]; then
+        python3 -m http.server $port
+    elif [ ! "$(type -t php)" == "" ]; then
+        php -S localhost:$port
+    elif [ ! "$(type -t npx)" == "" ]; then
+        npx --yes serve --listen $port
+    fi
+    
 }
 
 pwgen() {
