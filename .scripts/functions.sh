@@ -178,6 +178,59 @@ paths() {
     echo $PATH | tr ':' '\n' | sort | uniq
 }
 
+fetch() {
+    local distro="unknown"
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        distro=${PRETTY_NAME:-$NAME}        
+    fi
+    distro="$distro $(uname -o)"
+    local kernel=$(uname -r)
+    local arch=$(uname -m)
+    local mem_raw="$(free -b | grep -i mem)"
+    local total_mem_raw=$(echo $mem_raw | awk '{print $2}')
+    local used_mem_raw=$(echo $mem_raw | awk '{print $3}')
+    local mem="$(free -h --si | grep -i mem)";
+    local total_mem=$(echo $mem | awk '{print $2}')
+    local used_mem=$(echo $mem | awk '{print $3}')
+    local mem_percentage="$(( ( $used_mem_raw * 100 ) / $total_mem_raw ))"
+    local swap_raw="$(free -b | grep -i swap)"
+    local total_swap_raw=$(echo $swap_raw | awk '{print $2}')
+    local used_swap_raw=$(echo $swap_raw | awk '{print $3}')
+    local swap="$(free -h --si | grep -i swap)";
+    local total_swap=$(echo $swap | awk '{print $2}')
+    local used_swap=$(echo $swap | awk '{print $3}')
+    if [ ! "$total_swap_raw" == "0" ]; then
+        local swap_percentage="$(( ( $used_swap_raw * 100 ) / $total_swap_raw ))"
+    else
+        local swap_percentage="0"
+    fi
+    local cpu_raw="$(lscpu)"
+    local cpu_count=$(echo "$cpu_raw" | grep -i "^cpu(s):" | awk -F: '{print $2}' | xargs)
+    local cpu_name=$(echo "$cpu_raw" | grep -i "model name" | awk -F: '{print $2}' | xargs)
+    local bash_version=$(bash  --version | head -1 | grep -o -P "\d+\.\d+.\d+")
+
+    echo -e "\033[1mHardware\033[0m"
+    echo -en "\t" && echo "CPU: $cpu_name ($cpu_count)"
+    echo -en "\t" && echo "Arch: $arch"
+    echo -en "\t" && echo "RAM: $used_mem / $total_mem ($mem_percentage %)"
+    if [ ! "$swap_percentage" == "0" ]; then
+        echo -en "\t" && echo "Swap: $used_swap / $total_swap ($swap_percentage %)"
+    fi
+    while read line; do
+        local dir=$(echo $line | awk '{print $6}')
+        local percent=$(echo $line | awk '{print $5}')
+        local total_sp=$(echo $line | awk '{print $4}')
+        local used_sp=$(echo $line | awk '{print $3}')
+        echo -en "\t" && echo "Disk ($dir): $used_sp / $total_sp ($percent)"
+    done <<< $(df --si | grep "^/" | grep -v -F /boot)
+    echo
+    echo -e "\033[1mSoftware\033[0m"
+    echo -en "\t" && echo "Distro: $distro"
+    echo -en "\t" && echo "Kernel: $kernel"
+    echo -en "\t" && echo "Shell: bash $bash_version"
+}
+
 if [ ! "$(type -t docker)" == "" ]; then
     dokk_exec() {
         if [ "$1" == "" ]; then
