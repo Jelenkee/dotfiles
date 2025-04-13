@@ -4,8 +4,8 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 
 ## Setup
 
-* clone this repo to `~/dotfiles`
-* cd into the repo and run `bash setup.sh`
+* clone this repo
+* cd into the repo and run `make`
 * open a new terminal or run `source ~/.bashrc`
 * ...
 * profit

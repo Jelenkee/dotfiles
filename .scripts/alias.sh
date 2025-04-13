@@ -4,6 +4,7 @@ _df_init() {
     _set_alias_if_not_present "ncdu" "gdu"
     _set_alias_if_not_present ".." "cd .."
     _set_alias_if_not_present "..." "cd ../.."
+    _set_alias_if_not_present "cd-" "cd -"
     _set_alias_if_not_present "dl" "cd ~/Downloads"
     _set_alias_if_not_present "ranger" "yazi"
     _set_alias_if_not_present "y" "yazi"
@@ -27,6 +28,7 @@ _df_init() {
     alias eecho="echo \"\$@\" 1>&2"
     alias ll="ls -lisa"
     alias lisa="ls -lisa"
+    alias sl="ls"
 
     git config --global alias.s 'status -s'
     git config --global push.autoSetupRemote true

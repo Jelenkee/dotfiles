@@ -8,14 +8,15 @@ up() {
     elif [ ! "$(type -t pacman)" == "" ]; then
         sudo pacman -Syu
     elif [ ! "$(type -t apt)" == "" ]; then
-        sudo apt update && sudo apt upgrade
-        sudo apt autoremove
+        sudo apt update && sudo apt upgrade -y
+        sudo apt autoremove -y
     else
         echo "System not supported"
         return 1
     fi
 
     if [ ! "$(type -t rustup)" == "" ]; then
+        rustup self update
         rustup update stable
     fi
 
