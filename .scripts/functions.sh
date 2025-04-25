@@ -46,6 +46,10 @@ ebrc() {
     eval $EDITOR ~/.bashrc
 }
 
+sbrc() {
+    source ~/.bashrc
+}
+
 serve() {
     local port="${1:-9000}"
     if [ ! "$(type -t python3)" == "" ]; then
@@ -104,6 +108,7 @@ erase() {
     fi
     if [ ! "$(type -t docker)" == "" ]; then
         sudo docker image prune -f
+        sudo docker buildx prune -f
     fi
 }
 
@@ -178,7 +183,7 @@ paths() {
     echo $PATH | tr ':' '\n' | sort | uniq
 }
 
-fetch() {
+ffetch() {
     local distro="unknown"
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -210,25 +215,29 @@ fetch() {
     local cpu_name=$(echo "$cpu_raw" | grep -i "model name" | awk -F: '{print $2}' | xargs)
     local bash_version=$(bash  --version | head -1 | grep -o -P "\d+\.\d+.\d+")
 
-    echo -e "\033[1mHardware\033[0m"
-    echo -en "\t" && echo "CPU: $cpu_name ($cpu_count)"
-    echo -en "\t" && echo "Arch: $arch"
-    echo -en "\t" && echo "RAM: $used_mem / $total_mem ($mem_percentage %)"
+    echo -e "\033[1;36mHardware\033[0m"
+    echo -en "\t\033[1mCPU\033[0m: " && echo "$cpu_name ($cpu_count)"
+    echo -en "\t\033[1mArch\033[0m: " && echo "$arch"
+    echo -en "\t\033[1mRAM\033[0m: " && echo "$used_mem / $total_mem ($mem_percentage %)"
     if [ ! "$swap_percentage" == "0" ]; then
-        echo -en "\t" && echo "Swap: $used_swap / $total_swap ($swap_percentage %)"
+        echo -en "\t\033[1mSwap\033[0m: " && echo "$used_swap / $total_swap ($swap_percentage %)"
     fi
     while read line; do
         local dir=$(echo $line | awk '{print $6}')
         local percent=$(echo $line | awk '{print $5}')
         local total_sp=$(echo $line | awk '{print $4}')
         local used_sp=$(echo $line | awk '{print $3}')
-        echo -en "\t" && echo "Disk ($dir): $used_sp / $total_sp ($percent)"
+        echo -en "\t\033[1mDisk\033[0m: " && echo "($dir): $used_sp / $total_sp ($percent)"
     done <<< $(df --si | grep "^/" | grep -v -F /boot)
-    echo
-    echo -e "\033[1mSoftware\033[0m"
-    echo -en "\t" && echo "Distro: $distro"
-    echo -en "\t" && echo "Kernel: $kernel"
-    echo -en "\t" && echo "Shell: bash $bash_version"
+    echo -e "\033[1;36mSoftware\033[0m"
+    echo -en "\t\033[1mOS\033[0m: " && echo "$distro"
+    echo -en "\t\033[1mKernel\033[0m: " && echo "$kernel"
+    echo -en "\t\033[1mHost\033[0m: " && echo "$(hostname)"
+    echo -en "\t\033[1mShell\033[0m: " && echo "bash $bash_version"
+    local termii=$(basename "$(cat "/proc/$PPID/comm")");
+    if [ ! "$termii" == "" ]; then
+        echo -en "\t\033[1mTerminal\033[0m: " && echo "$termii"
+    fi
 }
 
 if [ ! "$(type -t docker)" == "" ]; then

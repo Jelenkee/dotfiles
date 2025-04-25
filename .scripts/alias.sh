@@ -8,6 +8,7 @@ _df_init() {
     _set_alias_if_not_present "dl" "cd ~/Downloads"
     _set_alias_if_not_present "ranger" "yazi"
     _set_alias_if_not_present "y" "yazi"
+    _set_alias_if_not_present "fetch" "ffetch"
 
     if [ ! "$(type -t netstat)" == "" ]; then
         alias ports="netstat -tupln"
@@ -31,6 +32,8 @@ _df_init() {
     alias sl="ls"
 
     git config --global alias.s 'status -s'
+    git config --global alias.pul 'pull'
+    git config --global alias.pus 'push'
     git config --global push.autoSetupRemote true
     if [ ! "$(type -t micro)" == "" ]; then
         git config --global core.editor micro
