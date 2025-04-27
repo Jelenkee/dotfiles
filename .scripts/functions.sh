@@ -23,6 +23,10 @@ up() {
     if [ ! "$(type -t deno)" == "" ]; then
         deno upgrade
     fi
+
+    if [ ! "$(type -t snap)" == "" ]; then
+        sudo snap refresh
+    fi
 }
 
 deps() {
@@ -163,7 +167,7 @@ killport() {
     local pid2=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
 
     if [ ! "$pid2" == "" ]; then
-        sleep 1
+        sleep 3
         kill -9 $pid2
     fi    
 }
@@ -213,7 +217,7 @@ ffetch() {
     local cpu_raw="$(lscpu)"
     local cpu_count=$(echo "$cpu_raw" | grep -i "^cpu(s):" | awk -F: '{print $2}' | xargs)
     local cpu_name=$(echo "$cpu_raw" | grep -i "model name" | awk -F: '{print $2}' | xargs)
-    local bash_version=$(bash  --version | head -1 | grep -o -P "\d+\.\d+.\d+")
+    local bash_version=$(bash  --version | head -1 | parse_version)
 
     echo -e "\033[1;36mHardware\033[0m"
     echo -en "\t\033[1mCPU\033[0m: " && echo "$cpu_name ($cpu_count)"
@@ -223,12 +227,13 @@ ffetch() {
         echo -en "\t\033[1mSwap\033[0m: " && echo "$used_swap / $total_swap ($swap_percentage %)"
     fi
     while read line; do
-        local dir=$(echo $line | awk '{print $6}')
-        local percent=$(echo $line | awk '{print $5}')
-        local total_sp=$(echo $line | awk '{print $4}')
-        local used_sp=$(echo $line | awk '{print $3}')
-        echo -en "\t\033[1mDisk\033[0m: " && echo "($dir): $used_sp / $total_sp ($percent)"
-    done <<< $(df --si | grep "^/" | grep -v -F /boot)
+        local dir=$(echo $line | awk '{print $7}')
+        local percent=$(echo $line | awk '{print $6}')
+        local total_sp=$(echo $line | awk '{print $3}')
+        local used_sp=$(echo $line | awk '{print $4}')
+        local fs=$(echo $line | awk '{print $2}')
+        echo -en "\t\033[1mDisk\033[0m: " && echo "($dir): $used_sp / $total_sp ($percent) [$fs]"
+    done <<< $(df --si -T | grep "^/" | grep -v -F /boot)
     echo -e "\033[1;36mSoftware\033[0m"
     echo -en "\t\033[1mOS\033[0m: " && echo "$distro"
     echo -en "\t\033[1mKernel\033[0m: " && echo "$kernel"
@@ -238,6 +243,19 @@ ffetch() {
     if [ ! "$termii" == "" ]; then
         echo -en "\t\033[1mTerminal\033[0m: " && echo "$termii"
     fi
+    if [ ! "$(type -t git)" == "" ]; then
+        echo -en "\t  \033[1mgit\033[0m: " && git -v | parse_version
+    fi
+    if [ ! "$(type -t docker)" == "" ]; then
+        echo -en "\t  \033[1mdocker\033[0m: " && docker -v | parse_version
+    fi
+    if [ ! "$(type -t javac)" == "" ]; then
+        echo -en "\t  \033[1mJava\033[0m: " && javac -version | parse_version
+    fi
+}
+
+parse_version() {
+    grep --color=never -o -P "\d+\.\d+.\d+"
 }
 
 if [ ! "$(type -t docker)" == "" ]; then

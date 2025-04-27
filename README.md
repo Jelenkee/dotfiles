@@ -4,11 +4,9 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 
 ## Setup
 
-* clone this repo
+* Clone this repo
 * cd into the repo and run `make`
-* open a new terminal or run `source ~/.bashrc`
-* ...
-* profit
+* Open a new terminal or run `source ~/.bashrc`
 
 ## Features
 
@@ -21,9 +19,9 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 
 ## Aliases/Functions
 
-* `up` - updates all packages
+* `up` - updates (nearly) everything
 * `deps` - installs an opionated list of tools
-* `z`/`zz` - smart search (similar to zoxide)
+* `z`/`zz` - smart navigation (similar to zoxide)
     * `z -- list` - list history
     * `z -- clear` - clear history
 * `cd` - smarter cd
@@ -31,12 +29,17 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 * `mkd` - create dir and cd into it
 * `edit` - edit file
 * `ebrc` - edit ~/.bashrc
-* `serve` - start http file server in current directory
+* `sbrc` - source ~/.bashrc
+* `serve` - starts http file server in current directory
 * `pwgen` - generates password
-* `search` - search files (recursively)
-* `searchd` - search directories (recursively)
+* `ffetch` - shows basic system information
+* `search` - searches files (recursively)
+* `searchd` - searches directories (recursively)
 * `killport` - kills process for given port
 * `erase` - removes cache, trash and more stuff that uses disk space
+* `ports` - lists open ports
+* `paths` - lists dirs with executables ($PATH)
+* `eecho` - echo for stderr
 
 ## Env
 * `DF_POOR_PROMPT=1` to disable special glyphs
