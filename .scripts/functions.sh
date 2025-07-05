@@ -96,7 +96,6 @@ zup() {
 }
 
 erase() {
-    rm -rf ~/.cache/*
     rm -rf ~/.local/share/Trash/*
     rm -rf ~/.cargo/registry/src
     rm -rf ~/.cargo/registry/cache
@@ -109,6 +108,9 @@ erase() {
     elif [ ! "$(type -t apt)" == "" ]; then
         sudo apt autoremove
         sudo apt clean
+    fi
+    if [ ! "$(type -t yay)" == "" ]; then
+        echo Y | yay -Sc
     fi
     if [ ! "$(type -t docker)" == "" ]; then
         sudo docker image prune -f
@@ -244,7 +246,7 @@ ffetch() {
         echo -en "\t\033[1mTerminal\033[0m: " && echo "$termii"
     fi
     if [ ! "$(type -t git)" == "" ]; then
-        echo -en "\t  \033[1mgit\033[0m: " && git -v | parse_version
+        echo -en "\t  \033[1mgit\033[0m: " && git --version | parse_version
     fi
     if [ ! "$(type -t docker)" == "" ]; then
         echo -en "\t  \033[1mdocker\033[0m: " && docker -v | parse_version
