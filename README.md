@@ -20,7 +20,6 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 ## Aliases/Functions
 
 * `up` - updates (nearly) everything
-* `deps` - installs an opionated list of tools
 * `z`/`zz` - smart navigation (similar to zoxide)
     * `z -- list` - list history
     * `z -- clear` - clear history

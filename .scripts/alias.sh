@@ -32,6 +32,7 @@ _df_init() {
     alias ll="ls -lisa"
     alias lisa="ls -lisa"
     alias sl="ls"
+    alias l="ls"
 
     git config --global alias.s 'status -s'
     git config --global alias.pul 'pull'

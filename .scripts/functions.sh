@@ -4,9 +4,9 @@ mkd() {
 
 up() {
     if [ ! "$(type -t yay)" == "" ]; then
-        yay
+        yay --noconfirm
     elif [ ! "$(type -t pacman)" == "" ]; then
-        sudo pacman -Syu
+        sudo pacman -Syu --noconfirm
     elif [ ! "$(type -t apt)" == "" ]; then
         sudo apt update && sudo apt upgrade -y
         sudo apt autoremove -y
@@ -26,19 +26,6 @@ up() {
 
     if [ ! "$(type -t snap)" == "" ]; then
         sudo snap refresh
-    fi
-}
-
-deps() {
-    up
-    _install_package "fd"
-    _install_package "fd-find"
-    _install_package "micro"
-    _install_package "gdu"
-    _install_package "lsof"
-
-    if [ ! "$(type -t _set_aliases)" == "" ]; then
-        _set_aliases
     fi
 }
 
@@ -69,10 +56,9 @@ serve() {
 pwgen() {
     local len="${1:-16}"
     local number="${2:-1}"
-    local double=$(($len + $len))
     for (( i=0; i<$number; i++ ))
     do
-        head -c "$double" < /dev/urandom | base64 -w 0 | tr -d "=+/" | head -c "$len"
+        base64 -w 0 < /dev/urandom | tr -d "=+/" | head -c "$len"
         echo ""
     done
 }
@@ -141,6 +127,10 @@ gsw() {
         return 1
     fi
 
+    if [ "$1" == "-" ]; then
+        return git switch -
+    fi
+
     local branch=$(git branch -l --format "%(refname:short)" | grep -F -i "$1")
 
     if [ "$branch" == "" ]; then
@@ -172,17 +162,6 @@ killport() {
         sleep 3
         kill -9 $pid2
     fi    
-}
-
-_install_package() {
-    if [ ! "$(type -t pacman)" == "" ]; then
-        sudo pacman -S --noconfirm "$1"
-    elif [ ! "$(type -t apt)" == "" ]; then
-        sudo apt -y install "$1"
-    else
-        echo "System not supported"
-        return 1
-    fi
 }
 
 paths() {
@@ -219,7 +198,7 @@ ffetch() {
     local cpu_raw="$(lscpu)"
     local cpu_count=$(echo "$cpu_raw" | grep -i "^cpu(s):" | awk -F: '{print $2}' | xargs)
     local cpu_name=$(echo "$cpu_raw" | grep -i "model name" | awk -F: '{print $2}' | xargs)
-    local bash_version=$(bash  --version | head -1 | parse_version)
+    local bash_version=$(bash  --version | head -1 | _parse_version)
 
     echo -e "\033[1;36mHardware\033[0m"
     echo -en "\t\033[1mCPU\033[0m: " && echo "$cpu_name ($cpu_count)"
@@ -246,17 +225,17 @@ ffetch() {
         echo -en "\t\033[1mTerminal\033[0m: " && echo "$termii"
     fi
     if [ ! "$(type -t git)" == "" ]; then
-        echo -en "\t  \033[1mgit\033[0m: " && git --version | parse_version
+        echo -en "\t  \033[1mgit\033[0m: " && git --version | _parse_version
     fi
     if [ ! "$(type -t docker)" == "" ]; then
-        echo -en "\t  \033[1mdocker\033[0m: " && docker -v | parse_version
+        echo -en "\t  \033[1mdocker\033[0m: " && docker -v | _parse_version
     fi
     if [ ! "$(type -t javac)" == "" ]; then
-        echo -en "\t  \033[1mJava\033[0m: " && javac -version | parse_version
+        echo -en "\t  \033[1mJava\033[0m: " && javac -version | _parse_version
     fi
 }
 
-parse_version() {
+_parse_version() {
     grep --color=never -o -P "\d+\.\d+.\d+"
 }
 
@@ -281,4 +260,32 @@ if [ ! "$(type -t docker)" == "" ]; then
     }
     
     complete -F _df_comp_dokk_exec dokk_exec
+
+    _docom_commands=("build" "down" "exec" "kill" "pause" "port" "ps" "pull" "restart" "rm" "start" "stop" "unpause" "up")
+    docom() {
+        if [ "$1" == "" ]; then
+            echo "Missing argument"
+            return 1
+        fi
+        if [ "$1" == "upgrade" ]; then
+            return docom pull && docom up -d
+        fi
+        if [[ ! ${_docom_commands[@]} =~ $1 ]]; then
+            echo "Invalid command"
+            return 1
+        fi
+        find -L . -type f -iname "docker-compose.y*ml" -exec sh -c "docker compose -f {} $1 $2 $3" \;
+    }
+
+    _df_comp_docom() {
+        local cur prev;
+        cur="${COMP_WORDS[COMP_CWORD]}";
+        prev="${COMP_WORDS[COMP_CWORD-1]}";
+        COMPREPLY=()
+        if [ "$prev" == "docom" ]; then
+            COMPREPLY=( $(compgen -W "$(echo ${_docom_commands[@]})" -- ${cur}) )
+        fi
+    }
+
+    complete -F _df_comp_docom docom
 fi
