@@ -268,7 +268,9 @@ if [ ! "$(type -t docker)" == "" ]; then
             return 1
         fi
         if [ "$1" == "upgrade" ]; then
-            return docom pull && docom up -d
+            docom pull
+            docom up -d
+            return 0
         fi
         if [[ ! ${_docom_commands[@]} =~ $1 ]]; then
             echo "Invalid command"
