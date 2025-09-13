@@ -12,6 +12,10 @@ mkdir -p -v "$DF_DATA_DIR"
 export DF_CD_CACHE_FILE="${DF_DATA_DIR}/cd_history.txt"
 touch "$DF_CD_CACHE_FILE"
 
+if [ "$DF_PROMPT_ID" == "" ]; then
+    echo "Set DF_PROMPT_ID"
+fi
+
 if [ ! "$(type -t nano)" == "" ]; then
     vers=$(nano --version | _parse_version)
     major=$(echo $vers | grep --color=never -o -P "\\d+" | head -n1)

@@ -39,6 +39,9 @@ _df_set_prompt() {
 # get current branch in git repo
 _df_git_info() {
     local BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    if [ "${BRANCH}" == "HEAD" ]; then
+        BRANCH=$(git rev-parse --short HEAD 2>/dev/null)
+    fi
     if [ ! "${BRANCH}" == "" ]; then
         local STAT="$(_df_git_status)"
         echo " ${BRANCH}${STAT}"
@@ -59,6 +62,9 @@ _df_git_status() {
     fi
     if [ ! "$changes" == "" ] || [ ! "$untracked" == "" ]; then
         bits+="*"
+    fi
+    if [ ! "$(git bisect visualize --oneline)" == "" ]; then
+        bits+="(bisect)"
     fi
     
     if [ ! "$bits" == "" ]; then
