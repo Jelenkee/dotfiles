@@ -22,7 +22,7 @@ _df_set_prompt() {
     # result
     PS1+="$(_df_last_result $_status)$time"
     # prompt
-    PS1+="\[\e[1;36m\]\n$s2$bracket "
+    PS1+="\n\[\e[1;36m\]$s2$bracket "
     # reset
     PS1+="\[\e[m\]"
     export PS2="\[\e[36m\]>\[\e[m\] "

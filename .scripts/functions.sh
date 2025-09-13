@@ -236,7 +236,7 @@ ffetch() {
 }
 
 _parse_version() {
-    grep --color=never -o -P "\d+\.\d+.\d+"
+    grep --color=never -o -P "\d+\.\d+(.\d+)?"
 }
 
 if [ ! "$(type -t docker)" == "" ]; then
