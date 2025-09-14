@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+source ~/.scripts/helpers.sh
+source ~/.scripts/cd.sh
+
+zz $@

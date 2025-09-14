@@ -5,7 +5,8 @@ local function entry()
         position = { "top-center", y = 3, w = 30 },
     }
 
-    local child, err = Command("_df_zz")
+    local child, err = Command("zz")
+        :arg("-1")
         :arg(value)
         :stdout(Command.PIPED)
         :stderr(Command.INHERIT)

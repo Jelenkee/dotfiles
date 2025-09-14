@@ -27,7 +27,6 @@ _df_set_prompt() {
     PS1+="\[\e[m\]"
     export PS2="\[\e[36m\]>\[\e[m\] "
     
-    zz -- add
     
     _AT_PROMPT=1
     if [ -n "$_FIRST_PROMPT" ]; then
@@ -100,7 +99,6 @@ function _PreCommand() {
         return
     fi
     unset _AT_PROMPT
-    export OLDPWD2="$PWD"
     
     DF_START_DATE=$(date +%s)
 }

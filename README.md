@@ -21,8 +21,8 @@ You need to have [stow](https://www.gnu.org/software/stow/) installed!
 
 * `up` - updates (nearly) everything
 * `z`/`zz` - smart navigation (similar to zoxide)
-    * `z -- list` - list history
-    * `z -- clear` - clear history
+    * `z -l` - list history
+    * `z -c` - clear history
 * `cd` - smarter cd
 * `upload` - upload small files for 24 hours
 * `mkd` - create dir and cd into it

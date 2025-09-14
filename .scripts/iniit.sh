@@ -27,7 +27,7 @@ fi
 if [ ! "$(type -t git)" == "" ]; then
     vers=$(git --version | _parse_version)
     major=$(echo $vers | grep --color=never -o -P "\\d+" | head -n1)
-    minor=$(echo $vers | grep --color=never -o -P "\\d+" | tail +2 | head -n1)
+    minor=$(echo $vers | grep --color=never -o -P "\\d+" | tail -n +2 | head -n1)
     if ((major < 2)); then
         echo "Upgrade to git 2"
     fi
