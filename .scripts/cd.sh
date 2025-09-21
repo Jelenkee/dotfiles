@@ -1,8 +1,21 @@
 zz(){
-    local array=();
+    # cleanup missing dirs
+    local prearray=();
     while IFS= read -r -d '' part; do
-        array+=("$part")
+        prearray+=("$part")
     done < $DF_CD_CACHE_FILE;
+    local array=();
+    for i in "${!prearray[@]}"; do
+        if (( i % 2 == 0 )); then
+            continue
+        fi
+        if [ ! -d "${prearray[$i]}" ]; then
+            continue
+        fi
+        array+=("${prearray[$((i-1))]}")
+        array+=("${prearray[$i]}")
+    done
+    # sort array
     local arraylength=${#array[@]}
     local indices=();
     for (( i=0; i<${arraylength}; i+=2 ));
@@ -22,8 +35,8 @@ zz(){
     local sarray=();
     for ((i = 0; i < length; i++)); do
         local index=${indices[i]}
-        sarray+=(${array[$index]})
-        sarray+=(${array[$((index+1))]})
+        sarray+=("${array[$index]}")
+        sarray+=("${array[$((index+1))]}")
     done
     local dirarray=();
     for (( i=1; i<${arraylength}; i+=2 ));
@@ -40,9 +53,6 @@ zz(){
     elif [ "$1" == "-c" ]; then
         rm $DF_CD_CACHE_FILE
         touch $DF_CD_CACHE_FILE
-        return
-    elif [ "$1" == "-r" ]; then
-        true # TODO
         return
     elif [ "$1" == "-1" ]; then
         local args=("$2")
