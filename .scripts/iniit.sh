@@ -43,3 +43,14 @@ if [ ! "$(type -t bash)" == "" ]; then
         eecho "Upgrade to bash 5"
     fi
 fi
+
+nano_dirr="$HOME/.nano/syntax"
+if [ ! -d "${nano_dirr}" ]; then
+    mkdir -p "$(dirname "${nano_dirr}")"
+    if [ ! -d "/usr/share/nano-syntax-highlighting" ]; then
+        git clone https://github.com/scopatz/nanorc.git "${nano_dirr}"
+    else
+        ln -s "/usr/share/nano-syntax-highlighting" "${nano_dirr}"
+    fi
+fi
+unset nano_dirr

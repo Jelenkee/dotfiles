@@ -13,7 +13,7 @@ _df_init() {
     if [ ! "$(type -t netstat)" == "" ]; then
         alias ports="netstat -tupln"
     elif [ ! "$(type -t ss)" ]; then
-        alias ports="ss -lntu"
+        alias ports="ss -tlpn"
     fi
 
     if [ -x /usr/bin/dircolors ]; then

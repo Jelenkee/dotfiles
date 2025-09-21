@@ -62,7 +62,7 @@ _df_git_status() {
     if [ ! "$changes" == "" ] || [ ! "$untracked" == "" ]; then
         bits+="*"
     fi
-    if [ ! "$(git bisect visualize --oneline)" == "" ]; then
+    if [ ! "$(builtin cd $(git rev-parse --show-toplevel) && git bisect visualize --oneline)" == "" ]; then
         bits+="(bisect)"
     fi
     
@@ -90,7 +90,7 @@ _df_execution_time() {
 }
 
 _df_is_poor_prompt() {
-    [ "$DF_POOR_PROMPT" == "1" ]
+    [ "$DF_POOR_PROMPT" == "1" ] || [[ "$(tty)" == "/dev/tty"* ]]
 }
 
 # This will run before any command is executed.

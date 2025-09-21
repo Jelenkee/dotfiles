@@ -1,5 +1,5 @@
 include /usr/share/nano/*.nanorc
-include /usr/share/nano-syntax-highlighting/*.nanorc
+include ~/.nano/syntax/*.nanorc
 
 bind ^y zap main
 bind ^d "{copy}{paste}{up}{home}" main
