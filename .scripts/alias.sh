@@ -12,7 +12,7 @@ _df_init() {
 
     if [ ! "$(type -t netstat)" == "" ]; then
         alias ports="netstat -tupln"
-    elif [ ! "$(type -t ss)" ]; then
+    elif [ ! "$(type -t ss)" == "" ]; then
         alias ports="ss -tlpn"
     fi
 
@@ -29,10 +29,11 @@ _df_init() {
     alias push="git push --set-upstream origin \$(git rev-parse --abbrev-ref HEAD)"
     alias sudo="sudo "
     alias eecho="echo \"\$@\" 1>&2"
-    alias ll="ls -lisa"
+    alias ll="ls -lA"
     alias lisa="ls -lisa"
     alias sl="ls"
     alias l="ls"
+    alias cdtmp="cd \$(mktemp -d)"
 
     git config --global alias.s 'status -s'
     git config --global alias.pul 'pull'

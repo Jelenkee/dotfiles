@@ -12,7 +12,6 @@ up() {
         sudo apt autoremove -y
     else
         echo "System not supported"
-        return 1
     fi
 
     if [ ! "$(type -t rustup)" == "" ]; then
@@ -21,7 +20,7 @@ up() {
     fi
 
     if [ ! "$(type -t deno)" == "" ]; then
-        deno upgrade
+        deno upgrade || sudo deno upgrade
     fi
 
     if [ ! "$(type -t snap)" == "" ]; then
@@ -165,7 +164,7 @@ killport() {
 }
 
 paths() {
-    echo $PATH | tr ':' '\n' | sort | uniq
+    echo $PATH | tr ':' '\n'
 }
 
 ffetch() {
@@ -290,4 +289,10 @@ if [ ! "$(type -t docker)" == "" ]; then
     }
 
     complete -F _df_comp_docom docom
+fi
+
+if [ "$(type -t npx)" == "" ] && [ ! "$(type -t deno)" == "" ]; then
+    npx() {
+        deno run -A npm:${@}
+    }
 fi
