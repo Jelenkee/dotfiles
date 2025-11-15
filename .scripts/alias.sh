@@ -4,7 +4,9 @@ _df_init() {
     _set_alias_if_not_present "ncdu" "gdu"
     _set_alias_if_not_present ".." "cd .."
     _set_alias_if_not_present "..." "cd ../.."
+    _set_alias_if_not_present "...." "cd ../../.."
     _set_alias_if_not_present "cd-" "cd -"
+    _set_alias_if_not_present "back" "cd -"
     _set_alias_if_not_present "dl" "cd ~/Downloads"
     _set_alias_if_not_present "ranger" "yazi"
     _set_alias_if_not_present "y" "yazi"
@@ -25,8 +27,17 @@ _df_init() {
         alias egrep='egrep --color=auto'
     fi
 
-    alias g="git"
-    alias push="git push --set-upstream origin \$(git rev-parse --abbrev-ref HEAD)"
+    if [ ! "$(type -t git)" == "" ]; then
+        alias g="git"
+        alias push="git push --set-upstream origin \$(git rev-parse --abbrev-ref HEAD)"
+        git config --global alias.s 'status -s'
+        git config --global alias.pul 'pull'
+        git config --global alias.pus 'push'
+        git config --global push.autoSetupRemote true
+        if [ ! "$(type -t micro)" == "" ]; then
+            git config --global core.editor micro
+        fi
+    fi
     alias sudo="sudo "
     alias eecho="echo \"\$@\" 1>&2"
     alias ll="ls -lA"
@@ -34,14 +45,6 @@ _df_init() {
     alias sl="ls"
     alias l="ls"
     alias cdtmp="cd \$(mktemp -d)"
-
-    git config --global alias.s 'status -s'
-    git config --global alias.pul 'pull'
-    git config --global alias.pus 'push'
-    git config --global push.autoSetupRemote true
-    if [ ! "$(type -t micro)" == "" ]; then
-        git config --global core.editor micro
-    fi
 
 }
 _set_alias_if_not_present() {

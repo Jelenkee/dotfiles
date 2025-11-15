@@ -70,16 +70,6 @@ searchd() {
     find $PWD -iname "*${1}*" -type d
 }
 
-zup() {
-    local steps=${1:-1}
-    local cmd=""
-    for ((i = 0; i < $steps; i++)); do
-        cmd+="../"
-    done
-
-    builtin cd $cmd
-}
-
 erase() {
     rm -rf ~/.local/share/Trash/*
     rm -rf ~/.cargo/registry/src
@@ -106,8 +96,8 @@ erase() {
 upload() {
     local title=""
     if [ ! "$1" == "" ]; then
-        local text=$(cat $1)
-        local title=$(basename $1)
+        local text="$(cat $1)"
+        local title="$(basename $1)"
     else
         local text=$(cat)
     fi
@@ -153,14 +143,17 @@ killport() {
         return 1
     fi
 
+    local pid2
     kill $pid
+    for i in {1..5}; do
+        sleep 2;
+        pid2=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
+        if [ "$pid2" == "" ]; then
+            return
+        fi  
+    done
 
-    local pid2=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
-
-    if [ ! "$pid2" == "" ]; then
-        sleep 3
-        kill -9 $pid2
-    fi    
+    kill -9 $pid2
 }
 
 paths() {
