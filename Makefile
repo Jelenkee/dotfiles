@@ -4,10 +4,12 @@ KEY:=qpqBVwsQg2fe3YOA
 all: restow
 
 restow:
-	cd ${ROOT_DIR}
-	find ${ROOT_DIR}/.local/bin -type f -exec chmod +x {} \;
+	@cd ${ROOT_DIR}
+	@find ${ROOT_DIR}/.local/bin -type f -exec chmod +x {} \;
 	stow --target $(HOME) --verbose --restow --no-folding --ignore='Makefile' .
-	@if ! grep -q "${KEY}" ~/.bashrc; then (printf "\nsource ~/.scripts/iniit.sh ##${KEY}" >> ~/.bashrc); fi
+	@sed -i '/${KEY}/d' ~/.bashrc
+	@sed -i ':a;/^\n*$$/{$$d;N;ba}' ~/.bashrc
+	@printf "\nsource ~/.scripts/iniit.sh ##${KEY}\n" >> ~/.bashrc
 	
 
 delete:

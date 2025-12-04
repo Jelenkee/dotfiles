@@ -160,6 +160,11 @@ paths() {
     echo $PATH | tr ':' '\n'
 }
 
+loadenv() {
+    local file=${1:-.env}        
+    export $(cat $file | xargs)
+}
+
 ffetch() {
     local distro="unknown"
     if [ -f /etc/os-release ]; then

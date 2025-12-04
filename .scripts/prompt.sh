@@ -55,6 +55,7 @@ _df_git_status() {
     local staged=$(echo "$status" | grep '^[A-Z] ')
     local changes=$(echo "$status" | grep '^ [A-Z]')
     local untracked=$(echo "$status" | grep '^??')
+    local unmerged=$(echo "$status" | grep '^U')
     local bits=""
     if [ ! "$staged" == "" ]; then
         bits+="+"
@@ -64,6 +65,9 @@ _df_git_status() {
     fi
     if [ ! "$(builtin cd $(git rev-parse --show-toplevel) && git bisect visualize --oneline)" == "" ]; then
         bits+="(bisect)"
+    fi
+    if [ ! "$unmerged" == "" ]; then
+        bits+="(merging)"
     fi
     
     if [ ! "$bits" == "" ]; then
