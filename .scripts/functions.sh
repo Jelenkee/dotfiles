@@ -311,18 +311,19 @@ harden_vps() {
     sudo groupadd docker
     sudo usermod -aG docker $USER
 
+    sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.bak
     local new_ssh_port=""
     read -p "enter new ssh port (default 22) " new_ssh_port
     if [ ! "$new_ssh_port" == "" ]; then
         if [ "$(grep ^Port /etc/ssh/sshd_config)" == "" ]; then
-            echo "Port $new_ssh_port" | sudo tee /etc/ssh/sshd_config > /dev/null
+            echo "Port $new_ssh_port" | sudo tee -a /etc/ssh/sshd_config > /dev/null
         else
             sudo sed -i "s/^Port .*/Port $new_ssh_port/g" /etc/ssh/sshd_config
         fi
         echo "changed port to $new_ssh_port"
     fi
     if [ "$(grep ^PasswordAuthentication /etc/ssh/sshd_config)" == "" ]; then
-        echo "PasswordAuthentication no" | sudo tee /etc/ssh/sshd_config > /dev/null
+        echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config > /dev/null
     else
         sudo sed -i "s/^PasswordAuthentication .*/PasswordAuthentication no/g" /etc/ssh/sshd_config
     fi
