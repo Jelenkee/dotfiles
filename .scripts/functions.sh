@@ -294,3 +294,60 @@ if [ "$(type -t npx)" == "" ] && [ ! "$(type -t deno)" == "" ]; then
         deno run -A npm:${@}
     }
 fi
+
+harden_vps() {
+    if [ "$USER" == "root" ]; then
+        local username=""
+        read -p "enter new user (leave empty to skip) " username
+        if [ ! "$username" == "" ]; then
+            useradd -m $username
+            passwd $username
+            usermod -aG sudo $username
+            usermod --shell $(which bash) $username
+        fi
+        return
+    fi
+
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
+
+    local new_ssh_port=""
+    read -p "enter new ssh port (default 22) " new_ssh_port
+    if [ ! "$new_ssh_port" == "" ]; then
+        if [ "$(grep ^Port /etc/ssh/sshd_config)" == "" ]; then
+            echo "Port $new_ssh_port" | sudo tee /etc/ssh/sshd_config > /dev/null
+        else
+            sudo sed -i "s/^Port .*/Port $new_ssh_port/g" /etc/ssh/sshd_config
+        fi
+        echo "changed port to $new_ssh_port"
+    fi
+    if [ "$(grep ^PasswordAuthentication /etc/ssh/sshd_config)" == "" ]; then
+        echo "PasswordAuthentication no" | sudo tee /etc/ssh/sshd_config > /dev/null
+    else
+        sudo sed -i "s/^PasswordAuthentication .*/PasswordAuthentication no/g" /etc/ssh/sshd_config
+    fi
+    echo "disbaled password ssh: $(grep ^PasswordAuth /etc/ssh/sshd_config)" 
+    sudo systemctl restart sshd
+
+    if [ "$(type -t ufw)" == "" ]; then
+        sudo ufw default deny incoming
+        sudo ufw default allow outgoing
+        sudo ufw allow ssh
+        sudo ufw allow 22/tcp
+        local ssh_port=$(grep ^Port /etc/ssh/sshd_config | awk '{print $2}')
+        if [ ! "$ssh_port" == "" ]; then
+            sudo ufw allow $ssh_port/tcp
+        fi
+        sudo ufw allow http
+        sudo ufw allow https
+        echo "configured ufw (ssh port ${ssh_port:-22})"
+
+        sudo ufw enable
+        echo "enabled ufw"
+        sudo ufw status verbose
+    else
+        echo "please install ufw!!"
+    fi
+    up
+
+}

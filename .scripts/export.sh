@@ -25,6 +25,9 @@ else
     export VISUAL=nano
 fi
 
+export EDITOR=nano
+export VISUAL=nano
+
 export CLICOLOR=1
 
 shopt -s histappend
