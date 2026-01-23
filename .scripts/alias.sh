@@ -7,7 +7,6 @@ _df_init() {
     _set_alias_if_not_present "...." "cd ../../.."
     _set_alias_if_not_present "cd-" "cd -"
     _set_alias_if_not_present "back" "cd -"
-    _set_alias_if_not_present "dl" "cd ~/Downloads"
     _set_alias_if_not_present "ranger" "yazi"
     _set_alias_if_not_present "y" "yazi"
     _set_alias_if_not_present "fetch" "ffetch"
@@ -21,7 +20,6 @@ _df_init() {
     if [ -x /usr/bin/dircolors ]; then
         test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
         alias ls='ls --color=auto'
-
         alias grep='grep --color=auto'
         alias fgrep='fgrep --color=auto'
         alias egrep='egrep --color=auto'
@@ -30,13 +28,6 @@ _df_init() {
     if [ ! "$(type -t git)" == "" ]; then
         alias g="git"
         alias push="git push --set-upstream origin \$(git rev-parse --abbrev-ref HEAD)"
-        git config --global alias.s 'status -s'
-        git config --global alias.pul 'pull'
-        git config --global alias.pus 'push'
-        git config --global push.autoSetupRemote true
-        if [ ! "$(type -t micro)" == "" ]; then
-            git config --global core.editor micro
-        fi
     fi
     alias sudo="sudo "
     alias eecho="echo \"\$@\" 1>&2"

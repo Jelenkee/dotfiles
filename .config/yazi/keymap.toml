@@ -9,5 +9,5 @@ append_keymap = [
 	{ on = "<C-t>", run = "tab_create --current" },
 	{ on = "<C-w>", run = "close" },
 	{ on = "<A-Left>", run = "tab_switch -1 --relative" },
-	{ on = "<A-Right>", run = "tab_switch -1 --relative" },
+	{ on = "<A-Right>", run = "tab_switch +1 --relative" },
 ]

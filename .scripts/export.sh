@@ -17,14 +17,6 @@ if [ ! "$__lc" == "" ]; then
 fi
 unset __lc
 
-if [ ! "$(type -t micro)" == "" ]; then
-    export EDITOR=micro
-    export VISUAL=micro
-else
-    export EDITOR=nano
-    export VISUAL=nano
-fi
-
 export EDITOR=nano
 export VISUAL=nano
 

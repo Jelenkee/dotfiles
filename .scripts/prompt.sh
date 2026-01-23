@@ -63,7 +63,7 @@ _df_git_status() {
     if [ ! "$changes" == "" ] || [ ! "$untracked" == "" ]; then
         bits+="*"
     fi
-    if [ ! "$(builtin cd $(git rev-parse --show-toplevel) && git bisect visualize --oneline)" == "" ]; then
+    if [ ! "$(builtin cd "$(git rev-parse --show-toplevel)" && git bisect visualize --oneline)" == "" ]; then
         bits+="(bisect)"
     fi
     if [ ! "$unmerged" == "" ]; then

@@ -20,7 +20,11 @@ up() {
     fi
 
     if [ ! "$(type -t deno)" == "" ]; then
-        deno upgrade || sudo deno upgrade
+        if [[ "$(which deno)" == /home* ]]; then
+            deno upgrade
+        else
+            sudo deno upgrade
+        fi
     fi
 
     if [ ! "$(type -t snap)" == "" ]; then
@@ -329,8 +333,9 @@ harden_vps() {
     fi
     echo "disbaled password ssh: $(grep ^PasswordAuth /etc/ssh/sshd_config)" 
     sudo systemctl restart sshd
+    sudo systemctl restart ssh
 
-    if [ "$(type -t ufw)" == "" ]; then
+    if [ ! "$(type -t ufw)" == "" ]; then
         sudo ufw default deny incoming
         sudo ufw default allow outgoing
         sudo ufw allow ssh
