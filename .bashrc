@@ -18,9 +18,6 @@ export DF_CD_CACHE_FILE="${DF_DATA_DIR}/cdhistory.txt"
 touch "$DF_CD_CACHE_FILE"
 
 # warnings
-if [ "$DF_PROMPT_ID" == "" ]; then
-    eecho "Set DF_PROMPT_ID"
-fi
 
 if [ ! "$(type -t nano)" == "" ]; then
     vers=$(nano --version | _parse_version)
@@ -62,6 +59,10 @@ fi
 
 if [ -f ~/.localbashrc ]; then
     . ~/.localbashrc
+fi
+
+if [ "$DF_PROMPT_ID" == "" ]; then
+    eecho "Set DF_PROMPT_ID"
 fi
 
 #### ⚠️ DONT CUSTOMIZE HERE! USE .localbashrc INSTEAD ⚠️ ####
