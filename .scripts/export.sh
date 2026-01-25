@@ -4,6 +4,10 @@ if ! echo "$PATH" | grep -q -F "$__local_bin"; then
 fi
 unset __local_bin
 
+if [ "$SSH_TTY" != "" ]; then
+    export TERM="dumb"
+fi
+
 export HISTSIZE=1000
 export HISTFILESIZE=10000
 
