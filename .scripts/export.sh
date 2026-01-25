@@ -5,7 +5,7 @@ fi
 unset __local_bin
 
 if [ "$SSH_TTY" != "" ]; then
-    export TERM="dumb"
+    export TERM="xterm"
 fi
 
 export HISTSIZE=1000
