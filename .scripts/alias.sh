@@ -2,8 +2,6 @@ _df_init() {
     _set_alias_if_not_present "z" "zz"
     _set_alias_if_not_present "fd" "fdfind"
     _set_alias_if_not_present "ncdu" "gdu"
-    _set_alias_if_not_present ".." "cd .."
-    _set_alias_if_not_present "..." "cd ../.."
     _set_alias_if_not_present "...." "cd ../../.."
     _set_alias_if_not_present "cd-" "cd -"
     _set_alias_if_not_present "back" "cd -"

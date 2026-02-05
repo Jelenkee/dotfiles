@@ -66,6 +66,20 @@ pwgen() {
     done
 }
 
+..() {
+    cd ..
+    if [ "$#" -ne 0 ]; then
+        cd $@
+    fi
+}
+
+...() {
+    cd ../..
+    if [ "$#" -ne 0 ]; then
+        cd $@
+    fi
+}
+
 search() {
     find $PWD -iname "*${1}*" -type f
 }
