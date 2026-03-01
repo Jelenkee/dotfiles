@@ -3,6 +3,16 @@ mkd() {
 }
 
 up() {
+    if [ ! "$(type -t dockar)" == "" ]; then
+        for ii in $(dockar ps -q); do
+            local script=$(dockar inspect --format '{{ index .Config.Labels "com.docker.compose.project.config_files" }}' $ii)
+            if [ ! "$script" == "" ]; then
+                dockar compose -f "$script" pull
+                dockar compose -f "$script" up -d
+            fi
+        done
+    fi
+    return
     if [ ! "$(type -t yay)" == "" ]; then
         yay --noconfirm
     elif [ ! "$(type -t pacman)" == "" ]; then
@@ -255,6 +265,24 @@ _parse_version() {
 }
 
 if [ ! "$(type -t docker)" == "" ]; then
+    dockar() {
+        if [ "$(id -u)" == "0" ]; then
+            docker "$@"
+            return
+        fi
+        if groups $USER | grep -Fqw docker; then
+            docker "$@"
+        else
+            sudo docker "$@"
+        fi
+    }
+    
+    if [ ! "$(type -t __start_docker)" == "" ]; then
+        complete -o default -F __start_docker dockar
+    elif [ ! "$(type -t _docker)" == "" ]; then
+        complete -o default -F _docker dockar
+    fi
+
     dokk_exec() {
         if [ "$1" == "" ]; then
             echo "Missing argument"
