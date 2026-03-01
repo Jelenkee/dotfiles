@@ -12,7 +12,6 @@ up() {
             fi
         done
     fi
-    return
     if [ ! "$(type -t yay)" == "" ]; then
         yay --noconfirm
     elif [ ! "$(type -t pacman)" == "" ]; then
