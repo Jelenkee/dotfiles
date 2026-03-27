@@ -92,6 +92,10 @@ zz(){
     local dia=$(_df_search_dir dirarray[@] args[@])
     if [ ! "$dia" == "" ]; then
         builtin cd "$dia" && zz -a
+        if [ "$#" -gt 1 ]; then
+            shift
+            cd "$@"
+        fi
         return
     fi
 

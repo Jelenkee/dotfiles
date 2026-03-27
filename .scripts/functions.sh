@@ -78,14 +78,14 @@ pwgen() {
 ..() {
     cd ..
     if [ "$#" -ne 0 ]; then
-        cd $@
+        cd "$@"
     fi
 }
 
 ...() {
     cd ../..
     if [ "$#" -ne 0 ]; then
-        cd $@
+        cd "$@"
     fi
 }
 
@@ -117,6 +117,7 @@ erase() {
     if [ ! "$(type -t docker)" == "" ]; then
         sudo docker image prune -f
         sudo docker buildx prune -f
+        sudo docker volume prune -f
     fi
 }
 

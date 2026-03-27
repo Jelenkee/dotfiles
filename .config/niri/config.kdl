@@ -50,7 +50,7 @@ layout {
         active-color "#7fc8ff"
         inactive-color "#505050"
 
-        active-gradient from="#ffa585" to="#ffeda0" angle=0
+        active-gradient from="#ffa585" to="#ffeda0" angle=270
     }
 
     border {
@@ -67,6 +67,8 @@ layout {
 
     struts {
     }
+
+    background-color "transparent"
 }
 
 spawn-at-startup "qs" "-c" "noctalia-shell"
@@ -83,11 +85,8 @@ animations {
 
 window-rule {
     match app-id=r#"firefox$"# title="^Picture-in-Picture$"
-    open-floating true
-}
-
-window-rule {
     match title=r#"in picture$"#
+    match app-id=r#"com.system76.CosmicFilesDialog"#
     open-floating true
 }
 
@@ -109,6 +108,11 @@ window-rule {
 window-rule {
     geometry-corner-radius 6
     clip-to-geometry true
+}
+
+layer-rule {
+    match namespace="noctalia-wallpaper"
+    place-within-backdrop true
 }
 
 binds {
@@ -133,8 +137,10 @@ binds {
     XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "10%-"; }
 
     Mod+O repeat=false { toggle-overview; }
+    Mod+Tab repeat=false { toggle-overview; }
 
     Mod+Q repeat=false { close-window; }
+    Mod+D repeat=false { spawn-sh "sh ~/.help/niri/duplicate.sh"; }
 
     Mod+Left  { focus-column-left; }
     Mod+Down  { focus-window-down; }
