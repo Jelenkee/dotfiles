@@ -8,7 +8,7 @@ up() {
             local script=$(dockar inspect --format '{{ index .Config.Labels "com.docker.compose.project.config_files" }}' $ii)
             if [ ! "$script" == "" ]; then
                 dockar compose -f "$script" pull
-                dockar compose -f "$script" up -d
+                dockar compose -f "$script" up -d --remove-orphans
             fi
         done
     fi
@@ -77,15 +77,19 @@ pwgen() {
 
 ..() {
     cd ..
+    _TMPPWD="$OLDPWD"
     if [ "$#" -ne 0 ]; then
         cd "$@"
+        OLDPWD="$_TMPPWD"
     fi
 }
 
 ...() {
     cd ../..
+    _TMPPWD="$OLDPWD"
     if [ "$#" -ne 0 ]; then
         cd "$@"
+        OLDPWD="$_TMPPWD"
     fi
 }
 
@@ -118,6 +122,9 @@ erase() {
         sudo docker image prune -f
         sudo docker buildx prune -f
         sudo docker volume prune -f
+    fi
+    if [ ! "$(type -t npm)" == "" ]; then
+        npm cache verify
     fi
 }
 
