@@ -6,3 +6,4 @@ bind ^d "{copy}{paste}{up}{home}" main
 
 set linenumbers
 set smarthome
+set tabsize 4
