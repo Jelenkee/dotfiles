@@ -39,6 +39,9 @@ up() {
     if [ ! "$(type -t snap)" == "" ]; then
         sudo snap refresh
     fi
+    if [ ! "$(type -t npm)" == "" ]; then
+        npm -g upgrade || sudo npm -g upgrade
+    fi
 }
 
 edit() {
@@ -319,7 +322,7 @@ if [ ! "$(type -t docker)" == "" ]; then
         fi
         if [ "$1" == "upgrade" ]; then
             docom pull
-            docom up -d
+            docom up -d --remove-orphans
             return 0
         fi
         if [[ ! ${_docom_commands[@]} =~ $1 ]]; then
