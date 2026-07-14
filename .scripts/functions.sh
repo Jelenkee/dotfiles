@@ -1,5 +1,5 @@
 mkd() {
-    mkdir -p "$@" && cd "$_"
+    mkdir -p "$@" && cd -- "${@: -1}"
 }
 
 up() {
@@ -25,7 +25,7 @@ up() {
 
     if [ ! "$(type -t rustup)" == "" ]; then
         rustup self update
-        rustup update stable
+        until rustup update stable; do sleep 5; done
     fi
 
     if [ ! "$(type -t deno)" == "" ]; then
@@ -40,16 +40,19 @@ up() {
         sudo snap refresh
     fi
     if [ ! "$(type -t npm)" == "" ]; then
-        npm -g upgrade || sudo npm -g upgrade
+        sudo npm -g upgrade
+    fi
+    if [ ! "$(type -t pi)" == "" ]; then
+        pi update --extensions
     fi
 }
 
 edit() {
-    eval $EDITOR $@
+    "$EDITOR" "$@";
 }
 
 ebrc() {
-    eval $EDITOR ~/.bashrc
+    "$EDITOR" ~/.bashrc;
 }
 
 sbrc() {
@@ -155,7 +158,8 @@ gsw() {
     fi
 
     if [ "$1" == "-" ]; then
-        return git switch -
+        git switch -
+        return $?
     fi
 
     local branch=$(git branch -l --format "%(refname:short)" | grep -F -i "$1")
