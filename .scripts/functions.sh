@@ -29,7 +29,7 @@ up() {
     fi
 
     if [ ! "$(type -t deno)" == "" ]; then
-        if [[ "$(which deno)" == /home* ]]; then
+        if [[ "$(type -p deno)" == /home* ]]; then
             deno upgrade
         else
             sudo deno upgrade
