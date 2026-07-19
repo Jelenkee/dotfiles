@@ -12,16 +12,19 @@ export default function (pi: ExtensionAPI) {
 
 function setupTools(pi: ExtensionAPI) {
   //const fetchWiki = fetch;
+  const exaAPIKeys = (process.env["GOJO_EXA_API_KEYS"] ?? "").split(",")
+    .map($ => $.trim())
+    .filter(Boolean);
   const fetchWiki = createCookieFetch();
   pi.registerTool({
     name: "wikipedia",
     label: "Wikipedia",
-    description: "Search Wikipedia and extract information relevant to a specific intent. Given article titles (can be multiple) and an detailed intent describing what information is needed, this tool finds the best-matching Wikipedia article and returns the extracted content relevant to that intent.",
+    description: "Search Wikipedia and extract information relevant to a specific intent. Given article titles (can be multiple) and a detailed intent describing what information is needed, this tool finds the best-matching Wikipedia article and returns the extracted content relevant to that intent.",
     promptSnippet: "Search for information on wikipedia",
     promptGuidelines: [
       "Use wikipedia tool for looking up simple facts (use case of hydrazine, lifespan of ladybug, battles in world war 2, movies of brad pitt) or information that is likely to be found on wikipedia.org.",
       "Prefer wikipedia tool over web_search for factual, encyclopedic, or biographical questions about topics likely to have a dedicated Wikipedia article — people, places, species, historical events, concepts, organizations, etc.",
-      //TODO "Use web_search instead of wikipedia tool when the information is time-sensitive, current, or unlikely to be covered by an encyclopedia article.",
+      exaAPIKeys.length > 0 ? "Use web_search tool instead of wikipedia tool when the information is time-sensitive, current, or unlikely to be covered by an encyclopedia article (e.g. current events, recent news, real-time data, or topics that change frequently)." : "",
     ],
     parameters: Type.Object({
       articleTitles: Type.Array(Type.String, {
@@ -95,7 +98,6 @@ function setupTools(pi: ExtensionAPI) {
           .replaceAll(/<[^>]*>/gs, "</>")
           .replaceAll("&#160;", " ")
           .trim()
-        await ctx.ui.confirm(pageTitle, `${wikitext.length} - ${minifiedText.length}`);
         texts.push(minifiedText);
 
       }
@@ -114,7 +116,7 @@ function setupTools(pi: ExtensionAPI) {
     },
     renderResult(result, options, theme, context) {
       const text = (result.content[0] as TextContent).text;
-      let formattedText = options.expanded ? text.slice(0, 600) : text.slice(0, 250);
+      let formattedText = options.expanded ? text.slice(0, 1000) : text.slice(0, 250);
       if (formattedText.length != text.length) {
         formattedText += "...";
       }
@@ -122,18 +124,97 @@ function setupTools(pi: ExtensionAPI) {
       return new Text(theme.fg("toolOutput", formattedText), 0, 0);
     }
   });
+
+
+  if (exaAPIKeys.length > 0) {
+    type ExaResponse = {
+      results: ({
+        title: string,
+        url: string,
+        highlights: string
+      })[]
+    };
+    pi.registerTool({
+      name: "web_search",
+      label: "Web Search",
+      description: "Searches the web and returns a list of relevant results (title, URL, and snippet) for a given query. Use this to find current information, facts, or sources you don't already know.",
+      promptSnippet: "Search up-to-date information from the internet",
+      promptGuidelines: [
+        "Do NOT use web_search tool for well-known historical facts, basic definitions, or anything you can confidently answer from your own knowledge.",
+      ],
+      parameters: Type.Object({
+        query: Type.String({
+          description: "The search query string. Keep it concise and keyword-focused, e.g. 'current Bitcoin price USD' rather than 'what is the price of Bitcoin right now please'.",
+          minLength: 2
+        }),
+        deep: Type.Boolean({
+          description: "When true, execute multi-step searches with synthesized results. Use for complex queries requiring cross-referencing multiple sources or iterative search refinement.",
+        }),
+      }),
+      async execute(toolCallId, params, signal, onUpdate, ctx) {
+        ctx.ui.notify(`Searching '${params.query}'`);
+        const exaUrl = "https://api.exa.ai/search";
+        const response = await fetch(exaUrl, {
+          signal,
+          method: "POST",
+          headers: {
+            "x-api-key": exaAPIKeys.sample(),
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            query: params.query,
+            numResults: 5,
+            contents: {
+              highlights: true
+            },
+            type: params.deep ? "deep" : "fast"
+          })
+        });
+        if (!response.ok) {
+          throw new Error("Error when searching exa: " + response.status);
+        }
+        const payload = await response.json() as ExaResponse;
+
+        ctx.ui.notify("");
+        return {
+          content: [{ type: "text", text: JSON.stringify(payload.results) }],
+          details: payload,
+        };
+      },
+      renderResult(result, options, theme, context) {
+        const details = result.details as ExaResponse;
+        const text = details.results.map($ => $.highlights).join("\n\n");
+        let formattedText = options.expanded ? text.slice(0, 1000) : text.slice(0, 250);
+        if (formattedText.length != text.length) {
+          formattedText += "...";
+        }
+
+        return new Text(theme.fg("toolOutput", formattedText), 0, 0);
+      }
+    });
+  }
+
+  pi.on("session_start", async (event, ctx) => {
+    pi.registerTool({
+      name: "noop",
+      label: "Noop",
+      description: "Does nothing",
+      promptSnippet: "Does nothing",
+      promptGuidelines: [
+        `Do not create/edit files outside of ${ctx.cwd} (including sub directories) or /tmp (unless explicitly instructed to do so)`,
+      ],
+      parameters: Type.Enum(["_"]),
+      async execute(toolCallId, params, signal, onUpdate, ctx) {
+        return {
+          content: [{ type: "text", text: "error!!" }],
+          details: {},
+        };
+      }
+    });
+  })
 }
 
 function setupEvents(pi: ExtensionAPI) {
-  pi.on("before_agent_start", async (event, ctx) => {
-    return {
-      systemPrompt: `${event.systemPrompt}
-
-Important guidelines:
-- Do not create/edit files outside of ${ctx.cwd} (including sub directories) or /tmp (unless explicitly instructed to do so)
-`
-    }
-  });
   pi.on("tool_call", async (event, ctx) => {
     if (["write", "edit"].includes(event.toolName)) {
       let path = null;
@@ -202,4 +283,14 @@ function createCookieFetch() {
     return response;
   }
   return fetch2 satisfies typeof fetch;
+}
+
+Array.prototype.sample = function () {
+  return this[Math.floor(Math.random() * this.length)];
+}
+
+declare global {
+  interface Array<T> {
+    sample(): T;
+  }
 }
