@@ -2,7 +2,9 @@ import { Type } from "typebox";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { Api, completeSimple, Model, TextContent } from "@earendil-works/pi-ai/compat";
-import { resolve } from "path";
+import { resolve, join } from "path";
+import { Cache } from "./util"
+import { createHash } from "crypto";
 
 export default function (pi: ExtensionAPI) {
   setupTools(pi);
@@ -23,7 +25,7 @@ function setupTools(pi: ExtensionAPI) {
     promptSnippet: "Search for information on wikipedia",
     promptGuidelines: [
       "Use wikipedia tool for looking up simple facts (use case of hydrazine, lifespan of ladybug, battles in world war 2, movies of brad pitt) or information that is likely to be found on wikipedia.org.",
-      "Prefer wikipedia tool over web_search for factual, encyclopedic, or biographical questions about topics likely to have a dedicated Wikipedia article — people, places, species, historical events, concepts, organizations, etc.",
+      exaAPIKeys.length > 0 ? "Prefer wikipedia tool over web_search for factual, encyclopedic, or biographical questions about topics likely to have a dedicated Wikipedia article — people, places, species, historical events, concepts, organizations, etc." : "",
       exaAPIKeys.length > 0 ? "Use web_search tool instead of wikipedia tool when the information is time-sensitive, current, or unlikely to be covered by an encyclopedia article (e.g. current events, recent news, real-time data, or topics that change frequently)." : "",
     ],
     parameters: Type.Object({
@@ -60,7 +62,7 @@ function setupTools(pi: ExtensionAPI) {
         }
       }
 
-      const titles = [];
+      const titles: string[] = [];
 
       let models = (process.env["GOJO_SUMMARIZE_MODELS"] ?? "")
         .split(",")
@@ -111,11 +113,16 @@ function setupTools(pi: ExtensionAPI) {
       ctx.ui.notify("");
       return {
         content: [{ type: "text", text }],
-        details: {},
+        details: { titles, intent: params.intent },
       };
     },
     renderResult(result, options, theme, context) {
-      const text = (result.content[0] as TextContent).text;
+      //@ts-ignore
+      const titles = result.details.titles as string[];
+      //@ts-ignore
+      const intent = result.details.intent as string;
+      let text = (result.content[0] as TextContent).text;
+      text = `Pages: ${titles.join(", ")}\nIntent: ${intent}\n\n${text}`
       let formattedText = options.expanded ? text.slice(0, 1000) : text.slice(0, 250);
       if (formattedText.length != text.length) {
         formattedText += "...";
@@ -140,6 +147,8 @@ function setupTools(pi: ExtensionAPI) {
       description: "Searches the web and returns a list of relevant results (title, URL, and snippet) for a given query. Use this to find current information, facts, or sources you don't already know.",
       promptSnippet: "Search up-to-date information from the internet",
       promptGuidelines: [
+        "Before calling web_search tool, you MUST first check whether the data is available via a free, public, unauthenticated API. If so, use `bash` + `curl` to call it directly instead of web_search.",
+        "Do NOT use web_search tool for data that has a well-known public REST API (e.g. GitHub, npm, PyPI, crates.io, Wikipedia REST API, wttr.in, musicbrainz, PokéAPI, HackerNews API, exchange rate APIs). Query the API directly with bash/curl. web_search tool can be used to fetch API documentation",
         "Do NOT use web_search tool for well-known historical facts, basic definitions, or anything you can confidently answer from your own knowledge.",
       ],
       parameters: Type.Object({
@@ -178,13 +187,19 @@ function setupTools(pi: ExtensionAPI) {
         ctx.ui.notify("");
         return {
           content: [{ type: "text", text: JSON.stringify(payload.results) }],
-          details: payload,
+          details: { payload, query: params.query, deep: params.deep },
         };
       },
       renderResult(result, options, theme, context) {
-        const details = result.details as ExaResponse;
-        const text = details.results.map($ => $.highlights).join("\n\n");
-        let formattedText = options.expanded ? text.slice(0, 1000) : text.slice(0, 250);
+        //@ts-ignore
+        const details = result.details.payload as ExaResponse;
+        //@ts-ignore
+        const query = result.details.query as string;
+        //@ts-ignore
+        const deep = result.details.deep as boolean;
+        let text = details.results.map($ => $.highlights).join("\n\n");
+        text = `Query: ${query}\nDeep: ${deep}\n\n${text}`
+        let formattedText = options.expanded ? text.slice(0, 1000) : text.slice(0, 300);
         if (formattedText.length != text.length) {
           formattedText += "...";
         }
@@ -244,9 +259,17 @@ function setupCommands(pi: ExtensionAPI) {
   })
 }
 
+const llmCache = new Cache("llm", 30 * 24 * 60 * 60 * 1000);
+
 async function callLLM(model: Model<Api> | string, messages: string[], systemPrompt: string | undefined, signal: AbortSignal | undefined, ctx: ExtensionContext): Promise<string | undefined> {
   if (typeof model === "string") {
     model = ctx.modelRegistry.getAvailable().filter(mod => mod.id === model)[0];
+  }
+  const rawCacheKey = `${model.id}_${messages.join(",")}_${systemPrompt}`;
+  const cacheKey = createHash("sha256").update(rawCacheKey).digest("hex");
+  const cachedValue = await llmCache.get(cacheKey);
+  if (cachedValue) {
+    return cachedValue;
   }
   const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
   if (!auth.ok || !auth.apiKey) {
@@ -257,11 +280,17 @@ async function callLLM(model: Model<Api> | string, messages: string[], systemPro
     systemPrompt,
   }, { apiKey: auth.apiKey, headers: auth.headers, env: auth.env, signal, reasoning: "medium" })
   if ((response.stopReason === "stop" || response.stopReason === "length") && response.content.length > 0) {
-    return response.content
+    const result = response.content
       .filter($ => $.type === "text")
       .map($ => $.text.trim())
       .filter(Boolean)
-      .join("\n")
+      .join("\n");
+    try {
+      await llmCache.set(cacheKey, result);
+    }
+    catch (e) {
+    }
+    return result;
   }
 }
 

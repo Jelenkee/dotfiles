@@ -413,3 +413,18 @@ harden_vps() {
     up
 
 }
+
+pis() {
+    if [ "$1" == "update" ]; then
+        docker image rm pi-agent;
+        return;
+    fi
+    docker build -t pi-agent -f ~/.pi/Dockerfile.pi $(mktemp -d);
+    docker run --rm -it \
+        -v "$PWD:/workspace" \
+        -v "${HOME}/.pi:/.pi" \
+        --network=host \
+        --user "$(id -u):$(id -g)" \
+        --name pi-agent \
+        pi-agent "$@"
+}
