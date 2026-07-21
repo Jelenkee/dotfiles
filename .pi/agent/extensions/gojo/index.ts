@@ -1,10 +1,10 @@
 import { Type } from "typebox";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
-import { Api, completeSimple, Model, TextContent } from "@earendil-works/pi-ai/compat";
+import { TextContent } from "@earendil-works/pi-ai/compat";
 import { resolve, join } from "path";
-import { Cache } from "./util"
-import { createHash } from "crypto";
+import { callLLM, createCookieFetch } from "./util"
+import { spawn } from "child_process";
 
 export default function (pi: ExtensionAPI) {
   setupTools(pi);
@@ -29,7 +29,7 @@ function setupTools(pi: ExtensionAPI) {
       exaAPIKeys.length > 0 ? "Use web_search tool instead of wikipedia tool when the information is time-sensitive, current, or unlikely to be covered by an encyclopedia article (e.g. current events, recent news, real-time data, or topics that change frequently)." : "",
     ],
     parameters: Type.Object({
-      articleTitles: Type.Array(Type.String, {
+      articleTitles: Type.Array(Type.String(), {
         minItems: 1,
         maxItems: 3,
         uniqueItems: true,
@@ -41,7 +41,6 @@ function setupTools(pi: ExtensionAPI) {
       }),
     }),
     async execute(toolCallId, params, signal, onUpdate, ctx) {
-      ctx.ui.notify(`Searching '${params.articleTitles}'`);
       let pageIds: number[] = [];
       for (const articleTitle of params.articleTitles) {
         const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&list=search&format=json&srsearch=${encodeURIComponent(articleTitle as string)}&srnamespace=0&srlimit=2&srprop=`;
@@ -90,7 +89,6 @@ function setupTools(pi: ExtensionAPI) {
         }
         const parseBody = await response.json();
         const pageTitle = parseBody.parse.title;
-        ctx.ui.notify(`Fetched '${pageTitle}'`);
         titles.push(pageTitle);
         const wikitext = parseBody.parse.text["*"] as string;
         const minifiedText = wikitext
@@ -104,17 +102,18 @@ function setupTools(pi: ExtensionAPI) {
 
       }
       const MYSTIC = "B8lgoTPOba";
-      ctx.ui.notify(`Summarizing '${titles.join(", ")}'`);
       let answer = await callLLM(model, [`Question: ${params.intent}?\nExtract a detailed answer from the following text. If no good answer found, return '${MYSTIC}.'\n\n${texts.map($ => `<article>${$}</article`).join("\n\n")}`], "you are an information-extracting assistant", ctx.signal, ctx);
       if (answer && answer.includes(MYSTIC)) {
         answer = undefined;
       }
       const text = answer ? answer : `No results found. Examined pages: ${titles.join(", ")}`;
-      ctx.ui.notify("");
       return {
         content: [{ type: "text", text }],
         details: { titles, intent: params.intent },
       };
+    },
+    renderCall(args, theme, context) {
+      return new Text(theme.fg("toolTitle", "Wikipedia\n") + theme.fg("muted", "Searching " + args.articleTitles.join(", ")), 0, 0);
     },
     renderResult(result, options, theme, context) {
       //@ts-ignore
@@ -190,6 +189,9 @@ function setupTools(pi: ExtensionAPI) {
           details: { payload, query: params.query, deep: params.deep },
         };
       },
+      renderCall(args, theme, context) {
+        return new Text(theme.fg("toolTitle", "Web Search"), 0, 0);
+      },
       renderResult(result, options, theme, context) {
         //@ts-ignore
         const details = result.details.payload as ExaResponse;
@@ -216,7 +218,7 @@ function setupTools(pi: ExtensionAPI) {
       description: "Does nothing",
       promptSnippet: "Does nothing",
       promptGuidelines: [
-        `Do not create/edit files outside of ${ctx.cwd} (including sub directories) or /tmp (unless explicitly instructed to do so)`,
+        `No Yapping!!`,
       ],
       parameters: Type.Enum(["_"]),
       async execute(toolCallId, params, signal, onUpdate, ctx) {
@@ -249,69 +251,40 @@ function setupEvents(pi: ExtensionAPI) {
       }
     }
   });
+
+  pi.on("before_agent_start", async (event, ctx) => {
+    const gitBranch = await new Promise<string | undefined>((resolve, reject) => {
+      const child = spawn("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+        cwd: ctx.cwd,
+        signal: ctx.signal,
+        timeout: 2000
+      });
+      let stdout = "";
+      child.stdout.on("data", (data) => (stdout += data));
+      child.on("close", code => {
+        if (code === 0) {
+          resolve(stdout.trim())
+        } else {
+          resolve(undefined)
+        }
+      });
+      child.on("error", error => {
+        reject(error)
+      })
+    });
+    const gitText = gitBranch ? `${ctx.cwd} has a git repository. Currently on branch ${gitBranch}` : `${ctx.cwd} has no git repository. Do not run any git commands.`
+    return {
+      systemPrompt: `${event.systemPrompt}\n${gitText}`
+    }
+  });
 }
 
 function setupCommands(pi: ExtensionAPI) {
   pi.registerCommand("gojo:dummy", {
     async handler(args, ctx) {
-      ctx.ui.notify("waiting")
+      ctx.ui.notify(pi.getActiveTools() + "-" + JSON.stringify(pi.getAllTools().map($ => $.name)))
     }
   })
-}
-
-const llmCache = new Cache("llm", 30 * 24 * 60 * 60 * 1000);
-
-async function callLLM(model: Model<Api> | string, messages: string[], systemPrompt: string | undefined, signal: AbortSignal | undefined, ctx: ExtensionContext): Promise<string | undefined> {
-  if (typeof model === "string") {
-    model = ctx.modelRegistry.getAvailable().filter(mod => mod.id === model)[0];
-  }
-  const rawCacheKey = `${model.id}_${messages.join(",")}_${systemPrompt}`;
-  const cacheKey = createHash("sha256").update(rawCacheKey).digest("hex");
-  const cachedValue = await llmCache.get(cacheKey);
-  if (cachedValue) {
-    return cachedValue;
-  }
-  const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-  if (!auth.ok || !auth.apiKey) {
-    throw new Error(auth.ok ? `No API key for ${model.provider}` : auth.error);
-  }
-  const response = await completeSimple(model, {
-    messages: messages.map(mes => ({ role: "user", content: mes, timestamp: Date.now() })),
-    systemPrompt,
-  }, { apiKey: auth.apiKey, headers: auth.headers, env: auth.env, signal, reasoning: "medium" })
-  if ((response.stopReason === "stop" || response.stopReason === "length") && response.content.length > 0) {
-    const result = response.content
-      .filter($ => $.type === "text")
-      .map($ => $.text.trim())
-      .filter(Boolean)
-      .join("\n");
-    try {
-      await llmCache.set(cacheKey, result);
-    }
-    catch (e) {
-    }
-    return result;
-  }
-}
-
-function createCookieFetch() {
-  const cookieMap = new Map();
-  async function fetch2(input: string | URL | Request, init?: RequestInit,) {
-    init = Object.assign({}, init);
-    init.headers = Object.fromEntries(new Headers(init.headers));
-    init.headers["cookie"] = Array.from(cookieMap.entries()).map(([key, value]) => `${key}=${value}`).join("; ");
-    if (!init.headers["cookie"]) {
-      delete init.headers["cookie"]
-    }
-    let response = await fetch(input, init);
-    for (const rawCookie of response.headers.getSetCookie()) {
-      const parts = rawCookie.split(";").map(p => p.trim());
-      const [key, value] = parts[0].split(/=(.*)/s).map(p => p.trim());
-      cookieMap.set(key, value)
-    }
-    return response;
-  }
-  return fetch2 satisfies typeof fetch;
 }
 
 Array.prototype.sample = function () {
