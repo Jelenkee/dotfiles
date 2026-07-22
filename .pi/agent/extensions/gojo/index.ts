@@ -2,9 +2,9 @@ import { Type } from "typebox";
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { TextContent } from "@earendil-works/pi-ai/compat";
-import { resolve, join } from "path";
-import { callLLM, createCookieFetch } from "./util"
-import { spawn } from "child_process";
+import { resolve, join, relative, isAbsolute } from "path";
+import { callLLM, createCookieFetch, runCommand } from "./util"
+import { homedir } from "os";
 
 export default function (pi: ExtensionAPI) {
   setupTools(pi);
@@ -233,46 +233,58 @@ function setupTools(pi: ExtensionAPI) {
 
 function setupEvents(pi: ExtensionAPI) {
   pi.on("tool_call", async (event, ctx) => {
-    if (["write", "edit"].includes(event.toolName)) {
-      let path = null;
-      if (event.toolName === "write") {
-        path = event.input.path as string
-      } else if (event.toolName === "edit") {
-        path = event.input.path as string
-      }
+    if (["write", "edit", "read"].includes(event.toolName)) {
+      //@ts-ignore
+      let path = typeof event.input.path === "string" ? event.input.path : undefined;
       if (!path) {
         return { block: false }
       }
-      const absolutePath = resolve(ctx.cwd, path);
-      if (!absolutePath.startsWith("/tmp") && !absolutePath.startsWith(ctx.cwd)) {
-        if (!ctx.hasUI || !(await ctx.ui.confirm(`Tool: ${event.toolName}`, `Allow modification of ${absolutePath}`, { signal: ctx.signal }))) {
-          return { block: true, reason: `Tool only allowed in /tmp and cwd (${ctx.cwd})` }
-        }
+      const blockReason = await validPath(ctx.cwd, path, event.toolName === "read", ctx.signal);
+      if (blockReason != null) {
+        return { block: true, reason: blockReason }
       }
     }
+    // todo if curl and -xpost || -x post
   });
 
-  pi.on("before_agent_start", async (event, ctx) => {
-    const gitBranch = await new Promise<string | undefined>((resolve, reject) => {
-      const child = spawn("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
-        cwd: ctx.cwd,
-        signal: ctx.signal,
-        timeout: 2000
-      });
-      let stdout = "";
-      child.stdout.on("data", (data) => (stdout += data));
-      child.on("close", code => {
-        if (code === 0) {
-          resolve(stdout.trim())
-        } else {
-          resolve(undefined)
-        }
-      });
-      child.on("error", error => {
-        reject(error)
-      })
+  async function validPath(cwd: string, path: string, read: boolean, signal: AbortSignal | undefined): Promise<string | undefined> {
+    const absolutePath = resolve(cwd, path);
+    if (absolutePath.startsWith(`${homedir()}/.pi/agent`)) {
+      return undefined;
+    }
+    const gitIgnore = await isGitIgnore(cwd, path, signal);
+    if (gitIgnore && (!read || !path.includes("/node_modules/"))) {
+      return "Not allowed to read from gitignored files/folders";
+    }
+    if (!isInCwdOrTmp(cwd, path)) {
+      return "outside of cwd or /tmp";
+    }
+
+  }
+
+  function isInCwdOrTmp(cwd: string, path: string): boolean {
+    const absolutePath = resolve(cwd, path);
+    cwd = resolve(cwd);
+    const relativ = relative(cwd, absolutePath);
+    return absolutePath.startsWith("/tmp") || (!relativ || !relativ.startsWith("..") && !isAbsolute(relativ));
+  }
+
+  async function isGitIgnore(cwd: string, path: string, signal: AbortSignal | undefined): Promise<boolean> {
+    const absolutePath = resolve(cwd, path);
+    const result = await runCommand("git", ["check-ignore", absolutePath], {
+      cwd,
+      signal
     });
-    const gitText = gitBranch ? `${ctx.cwd} has a git repository. Currently on branch ${gitBranch}` : `${ctx.cwd} has no git repository. Do not run any git commands.`
+    return result[1] === 0;
+  }
+
+  pi.on("before_agent_start", async (event, ctx) => {
+    const gitBranch = await runCommand("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+      cwd: ctx.cwd,
+      signal: ctx.signal,
+      timeout: 2000
+    });
+    const gitText = gitBranch[1] === 0 ? `${ctx.cwd} has a git repository. Currently on branch ${gitBranch[0]}` : `${ctx.cwd} has no git repository. Do not run any git commands.`
     return {
       systemPrompt: `${event.systemPrompt}\n${gitText}`
     }
