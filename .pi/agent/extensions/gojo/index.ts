@@ -218,9 +218,12 @@ function setupTools(pi: ExtensionAPI) {
       description: "Does nothing",
       promptSnippet: "Does nothing",
       promptGuidelines: [
-        `No Yapping!!`,
+        "No Yapping!!",
+        "When using bash tool, always use absolute paths (e.g. /home/joe/awesome) or relative paths starting with './' (e.g ./projects/penny)",
       ],
-      parameters: Type.Enum(["_"]),
+      parameters: Type.Object({
+        _: Type.Enum(["_"])
+      }),
       async execute(toolCallId, params, signal, onUpdate, ctx) {
         return {
           content: [{ type: "text", text: "error!!" }],
@@ -244,7 +247,22 @@ function setupEvents(pi: ExtensionAPI) {
         return { block: true, reason: blockReason }
       }
     }
-    // todo if curl and -xpost || -x post
+    if (event.toolName === "bash") {
+      const command = (event.input.command as string);
+      const parts = command.split(/"([^"\\]*(?:\\.[^"\\]*)*)"|'([^']*)'|(\S+)/g).map($ => $?.trim()).filter(Boolean);
+      for (const part of parts) {
+        if (part.includes("/") && !part.startsWith("/") && !part.startsWith("./") && !part.startsWith("../") && !part.endsWith("/")) {
+          return { block: true, reason: `Use './' before path. in this case ./${part}` }
+        }
+        if (part.startsWith("/") || part.startsWith("./") || part.startsWith("../")) {
+          const read = command.startsWith("ls ") || command.startsWith("grep ") || command.startsWith("find ")
+          const blockReason = await validPath(ctx.cwd, part, read, ctx.signal);
+          if (blockReason != null) {
+            return { block: true, reason: blockReason }
+          }
+        }
+      }
+    }
   });
 
   async function validPath(cwd: string, path: string, read: boolean, signal: AbortSignal | undefined): Promise<string | undefined> {
@@ -252,12 +270,15 @@ function setupEvents(pi: ExtensionAPI) {
     if (absolutePath.startsWith(`${homedir()}/.pi/agent`)) {
       return undefined;
     }
+    if (read && absolutePath.includes("/node_modules/")) {
+      return undefined;
+    }
     const gitIgnore = await isGitIgnore(cwd, path, signal);
-    if (gitIgnore && (!read || !path.includes("/node_modules/"))) {
-      return "Not allowed to read from gitignored files/folders";
+    if (gitIgnore) {
+      return "Not allowed to access gitignored files/folders";
     }
     if (!isInCwdOrTmp(cwd, path)) {
-      return "outside of cwd or /tmp";
+      return `Not allowed to access files outside of cwd (${cwd}) or /tmp`;
     }
 
   }
