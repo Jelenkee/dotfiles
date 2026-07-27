@@ -113,7 +113,7 @@ function setupTools(pi: ExtensionAPI) {
       };
     },
     renderCall(args, theme, context) {
-      return new Text(theme.fg("toolTitle", "Wikipedia\n") + theme.fg("muted", "Searching " + args.articleTitles.join(", ")), 0, 0);
+      return new Text(theme.fg("toolTitle", "Wikipedia\n") + theme.fg("muted", "Searching: " + args.articleTitles.join(", ")), 0, 0);
     },
     renderResult(result, options, theme, context) {
       //@ts-ignore
@@ -235,7 +235,7 @@ function setupTools(pi: ExtensionAPI) {
 }
 
 function setupEvents(pi: ExtensionAPI) {
-  pi.on("tool_call", async (event, ctx) => {
+  /*pi.on("tool_call", async (event, ctx) => {
     if (["write", "edit", "read"].includes(event.toolName)) {
       //@ts-ignore
       let path = typeof event.input.path === "string" ? event.input.path : undefined;
@@ -252,7 +252,7 @@ function setupEvents(pi: ExtensionAPI) {
       const parts = command.split(/"([^"\\]*(?:\\.[^"\\]*)*)"|'([^']*)'|(\S+)/g).map($ => $?.trim()).filter(Boolean);
       for (const part of parts) {
         if (part.includes("/") && !part.startsWith("/") && !part.startsWith("./") && !part.startsWith("../") && !part.endsWith("/")) {
-          return { block: true, reason: `Use './' before path. in this case ./${part}` }
+          //return { block: true, reason: `Use './' before path. in this case ./${part}` }
         }
         if (part.startsWith("/") || part.startsWith("./") || part.startsWith("../")) {
           const read = command.startsWith("ls ") || command.startsWith("grep ") || command.startsWith("find ")
@@ -263,7 +263,7 @@ function setupEvents(pi: ExtensionAPI) {
         }
       }
     }
-  });
+  });*/
 
   async function validPath(cwd: string, path: string, read: boolean, signal: AbortSignal | undefined): Promise<string | undefined> {
     const absolutePath = resolve(cwd, path);

@@ -1,0 +1,6 @@
+[settings]
+dotfiles.root = "{{ env.PWD }}"
+dotfiles.default_mode = "symlink-each"
+
+[dotfiles]
+"/~" = "."

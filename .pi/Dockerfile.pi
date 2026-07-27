@@ -1,8 +1,0 @@
-FROM alpine
-
-RUN apk upgrade
-RUN apk add nodejs npm ripgrep fd git python3 curl gawk
-RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-
-WORKDIR /workspace
-ENTRYPOINT ["pi"]
