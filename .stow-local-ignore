@@ -23,3 +23,5 @@ _darcs
 
 node_modules
 package-lock\.json
+mise\.toml
+Makefile

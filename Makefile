@@ -5,20 +5,21 @@ PATH := ~/.local/bin:$(PATH)
 all: restow
 
 restow:
-	@cd ${ROOT_DIR}
 	@find ${ROOT_DIR}/.local/bin -type f -exec chmod +x {} \;
-	stow --target $(HOME) --verbose --restow --no-folding --ignore='Makefile' .
+	stow --target $(HOME) --verbose --restow --no-folding ${ROOT_DIR}
 	
 delete:
-	cd ${ROOT_DIR}
-	stow --target $(HOME) --verbose --delete .
+	stow --target $(HOME) --verbose --delete ${ROOT_DIR}
 
-apply:
-	@cd ${MAKEFILE_DIR}
+apply: mise
+	@find ${MAKEFILE_DIR}/.local/bin -type f -exec chmod +x {} \;
+	mise bootstrap dotfiles apply -yv
+
+unapply: mise
+	mise bootstrap dotfiles unapply -yv
+
+mise:
 	@if ! type mise > /dev/null 2>&1; then curl https://mise.run | sh; mise doctor; fi
-	@mise trust
-	@mise dotfiles apply -y
-	@echo $(MAKEFILE_DIR)
-	@echo $(PATH)
+	@mise trust -y -q -C ${MAKEFILE_DIR}
 
-.PHONY: all restow delete apply
+.PHONY: all restow delete apply unapply mise

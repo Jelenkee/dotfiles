@@ -3,4 +3,12 @@ dotfiles.root = "{{ env.PWD }}"
 dotfiles.default_mode = "symlink-each"
 
 [dotfiles]
-"/~" = "."
+"/tmp/a" = { source = "", exclude = [
+    "mise.toml",
+    "*.md",
+    ".git",
+    ".gitignore",
+    "Makefile",
+    "node_modules",
+    "package-lock.json"
+] }
