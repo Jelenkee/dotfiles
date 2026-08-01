@@ -26,6 +26,7 @@ if [ ! "$(type -t mise)" == "" ]; then
         --allow-read ~/.local/share/mise \
         --allow-read ~/.local/bin \
         --allow-read ~/.config \
+        --allow-read ~/.cache \
         --allow-write \$(_df_highest_git_repo) \
         --allow-write /tmp \
         --allow-write ~/.pi \

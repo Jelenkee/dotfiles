@@ -44,6 +44,7 @@ up() {
     fi
     if [ ! "$(type -t mise)" == "" ]; then
         mise self-update -y
+        mise bootstrap -y
         mise up -y
     fi
     if [ ! "$(type -t pi)" == "" ]; then
@@ -135,6 +136,9 @@ erase() {
     fi
     if [ ! "$(type -t npm)" == "" ]; then
         npm cache verify
+    fi
+    if [ ! "$(type -t mise)" == "" ]; then
+        mise prune -y
     fi
 }
 

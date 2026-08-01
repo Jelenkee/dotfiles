@@ -1,9 +1,9 @@
 [settings]
-dotfiles.root = "{{ env.PWD }}"
+dotfiles.root = "{{ pwd }}"
 dotfiles.default_mode = "symlink-each"
 
 [dotfiles]
-"/tmp/a" = { source = "", exclude = [
+"~" = { source = "", exclude = [
     "mise.toml",
     "*.md",
     ".git",

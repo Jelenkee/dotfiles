@@ -13,7 +13,6 @@ export default function (pi: ExtensionAPI) {
 }
 
 function setupTools(pi: ExtensionAPI) {
-  //const fetchWiki = fetch;
   const exaAPIKeys = (process.env["GOJO_EXA_API_KEYS"] ?? "").split(",")
     .map($ => $.trim())
     .filter(Boolean);
@@ -149,6 +148,8 @@ function setupTools(pi: ExtensionAPI) {
         "Before calling web_search tool, you MUST first check whether the data is available via a free, public, unauthenticated API. If so, use `bash` + `curl` to call it directly instead of web_search.",
         "Do NOT use web_search tool for data that has a well-known public REST API (e.g. GitHub, npm, PyPI, crates.io, Wikipedia REST API, wttr.in, musicbrainz, PokéAPI, HackerNews API, exchange rate APIs). Query the API directly with bash/curl. web_search tool can be used to fetch API documentation",
         "Do NOT use web_search tool for well-known historical facts, basic definitions, or anything you can confidently answer from your own knowledge.",
+        "Never assume a claim, product name, version number, or price mentioned by the user is incorrect or fabricated just because it is unfamiliar to you or postdates your training. Your knowledge has a cutoff; the user's information may be more recent and correct.",
+        "If a user's message references a specific named entity (product, model, company policy, price, version number, event) that you cannot confidently verify from your own knowledge, you MUST call web_search (or check a public API per the rules above) BEFORE responding, even if no one explicitly asked you to search. Do this in the same turn — do not ask the user to confirm the fact first, and do not tell them they are mistaken without checking.",
       ],
       parameters: Type.Object({
         query: Type.String({
@@ -218,7 +219,6 @@ function setupTools(pi: ExtensionAPI) {
       description: "Does nothing",
       promptSnippet: "Does nothing",
       promptGuidelines: [
-        "No Yapping!!",
         "When using bash tool, always use absolute paths (e.g. /home/joe/awesome) or relative paths starting with './' (e.g ./projects/penny)",
       ],
       parameters: Type.Object({
@@ -235,7 +235,7 @@ function setupTools(pi: ExtensionAPI) {
 }
 
 function setupEvents(pi: ExtensionAPI) {
-  /*pi.on("tool_call", async (event, ctx) => {
+  pi.on("tool_call", async (event, ctx) => {
     if (["write", "edit", "read"].includes(event.toolName)) {
       //@ts-ignore
       let path = typeof event.input.path === "string" ? event.input.path : undefined;
@@ -247,23 +247,7 @@ function setupEvents(pi: ExtensionAPI) {
         return { block: true, reason: blockReason }
       }
     }
-    if (event.toolName === "bash") {
-      const command = (event.input.command as string);
-      const parts = command.split(/"([^"\\]*(?:\\.[^"\\]*)*)"|'([^']*)'|(\S+)/g).map($ => $?.trim()).filter(Boolean);
-      for (const part of parts) {
-        if (part.includes("/") && !part.startsWith("/") && !part.startsWith("./") && !part.startsWith("../") && !part.endsWith("/")) {
-          //return { block: true, reason: `Use './' before path. in this case ./${part}` }
-        }
-        if (part.startsWith("/") || part.startsWith("./") || part.startsWith("../")) {
-          const read = command.startsWith("ls ") || command.startsWith("grep ") || command.startsWith("find ")
-          const blockReason = await validPath(ctx.cwd, part, read, ctx.signal);
-          if (blockReason != null) {
-            return { block: true, reason: blockReason }
-          }
-        }
-      }
-    }
-  });*/
+  });
 
   async function validPath(cwd: string, path: string, read: boolean, signal: AbortSignal | undefined): Promise<string | undefined> {
     const absolutePath = resolve(cwd, path);
@@ -306,9 +290,25 @@ function setupEvents(pi: ExtensionAPI) {
       timeout: 2000
     });
     const gitText = gitBranch[1] === 0 ? `${ctx.cwd} has a git repository. Currently on branch ${gitBranch[0]}` : `${ctx.cwd} has no git repository. Do not run any git commands.`
+    const dateText = `Current date: ${new Date().toISOString().slice(0, 10)}`;
     return {
-      systemPrompt: `${event.systemPrompt}\n${gitText}`
+      systemPrompt: `${event.systemPrompt}\n${gitText}\n${dateText}`
     }
+  });
+
+  let startTime: number | undefined = Date.now();
+  pi.on("agent_start", async (event, ctx) => {
+    startTime = Date.now();
+  });
+
+  pi.on("agent_end", async (event, ctx) => {
+    if (startTime != null) {
+      const duration = Date.now() - startTime;
+      if (duration > 30000) {
+        await runCommand("notify-send", [`Pi finished after ${Math.floor(duration / 1000)} seconds`], { signal: ctx.signal });
+      }
+    }
+    startTime = undefined;
   });
 }
 

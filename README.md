@@ -1,7 +1,5 @@
 ## dotfiles (bash)
 
-You need to have [stow](https://www.gnu.org/software/stow/) installed!
-
 ## Setup
 
 * Clone this repo
