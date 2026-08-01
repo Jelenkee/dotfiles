@@ -2,6 +2,17 @@ mkd() {
     mkdir -p "$@" && cd -- "${@: -1}"
 }
 
+_df_is_sudo="false";
+if groups | grep -qE "sudo|wheel|root"; then
+    _df_is_sudo="true"
+fi
+
+if [ "$_df_is_sudo" == "false" ]; then
+    sudo() {
+        echo "no sudo permissions";
+    }
+fi
+
 up() {
     if [ ! "$(type -t dockar)" == "" ]; then
         for ii in $(dockar ps -q); do
@@ -40,7 +51,7 @@ up() {
         sudo snap refresh
     fi
     if [ ! "$(type -t npm)" == "" ]; then
-        sudo npm -g upgrade
+        sudo npm -g upgrade || npm -g upgrade
     fi
     if [ ! "$(type -t mise)" == "" ]; then
         mise self-update -y

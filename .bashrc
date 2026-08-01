@@ -61,6 +61,10 @@ if [ -f ~/.localbashrc ]; then
     . ~/.localbashrc
 fi
 
+if [ ! "$(type -t mise)" == "" ]; then
+    source <(mise activate bash)
+fi
+
 if [ "$DF_PROMPT_ID" == "" ]; then
     eecho "Set DF_PROMPT_ID"
 fi

@@ -1,2 +1,9 @@
 [tools]
 witr = "latest"
+yazi = "latest"
+gdu = "latest"
+
+[bootstrap.hooks.final]
+run = [
+    "bash ~/.help/mise/populate_path.sh"
+]
