@@ -62,7 +62,7 @@ if [ -f ~/.localbashrc ]; then
 fi
 
 if [ ! "$(type -t mise)" == "" ]; then
-    source <(mise activate bash)
+    source <(mise activate bash --no-hook-env)
 fi
 
 if [ "$DF_PROMPT_ID" == "" ]; then
