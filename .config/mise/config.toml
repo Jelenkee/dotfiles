@@ -1,11 +1,11 @@
 [tools]
+fastfetch = "latest"
+gdu = "latest"
+usage = "latest"
 witr = "latest"
 yazi = "latest"
-gdu = "latest"
-fastfetch = "latest"
 
 [bootstrap.hooks.final]
 run = [
-    "if type node > /dev/null 2>&1; then node ~/.help/mise/unpopulate_path.js; else mise x node -- node ~/.help/mise/unpopulate_path.js; fi",
     "if type node > /dev/null 2>&1; then node ~/.help/mise/populate_path.js; else mise x node -- node ~/.help/mise/populate_path.js; fi"
 ]
