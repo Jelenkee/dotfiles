@@ -59,7 +59,7 @@ up() {
         mise up -y
     fi
     if [ ! "$(type -t pi)" == "" ]; then
-        pi update --extensions
+        eval pi update --extensions
     fi
 }
 

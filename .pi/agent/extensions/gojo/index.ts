@@ -304,9 +304,9 @@ function setupEvents(pi: ExtensionAPI) {
   pi.on("agent_settled", async (event, ctx) => {
     if (startTime != null) {
       const duration = Date.now() - startTime;
-      if (duration > 3) {
-        const notifyInstalled=(await runCommand("which",["notify-send"],{signal:ctx.signal}))[1] === 0;
-        if (notifyInstalled){
+      if (duration > 30000) {
+        const notifyInstalled = (await runCommand("which", ["notify-send"], { signal: ctx.signal }))[1] === 0;
+        if (notifyInstalled) {
           await runCommand("notify-send", [`Pi finished after ${Math.floor(duration / 1000)} seconds`], { signal: ctx.signal });
         }
       }
