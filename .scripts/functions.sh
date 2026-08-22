@@ -10,6 +10,7 @@ fi
 if [ "$_df_is_sudo" == "false" ]; then
     sudo() {
         echo "no sudo permissions";
+        return 1;
     }
 fi
 
@@ -56,15 +57,11 @@ up() {
     if [ ! "$(type -t mise)" == "" ]; then
         mise self-update -y
         mise bootstrap -y
-        mise up -y
+        mise up --inactive -y
     fi
     if [ ! "$(type -t pi)" == "" ]; then
         eval pi update --extensions
     fi
-}
-
-edit() {
-    "$EDITOR" "$@";
 }
 
 ebrc() {
@@ -197,7 +194,7 @@ killport() {
         return 1
     fi
 
-    local pid=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
+    local pid=$(_get_pid $1)
     
     if [ "$pid" == "" ]; then
         echo "No PID found"
@@ -208,13 +205,21 @@ killport() {
     kill $pid
     for i in {1..5}; do
         sleep 2;
-        pid2=$(lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}')
+        pid2=$(_get_pid $1)
         if [ "$pid2" == "" ]; then
             return
         fi  
     done
 
     kill -9 $pid2
+}
+
+_get_pid() {
+    if [ ! "$(type -t lsof)" == "" ]; then
+        lsof -i :$1 | grep -w -i -F tcp | awk '{print $2}'
+    elif [ ! "$(type -t ss)" == "" ]; then
+        ss -tlpn | grep -F :$1 | grep -i -o -P "pid=\d+" | awk -F= '{print $2}'
+    fi
 }
 
 paths() {
@@ -224,73 +229,6 @@ paths() {
 loadenv() {
     local file=${1:-.env}        
     export $(cat $file | xargs)
-}
-
-ffetch() {
-    local distro="unknown"
-    if [ -f /etc/os-release ]; then
-        . /etc/os-release
-        distro=${PRETTY_NAME:-$NAME}        
-    fi
-    distro="$distro $(uname -o)"
-    local kernel=$(uname -r)
-    local arch=$(uname -m)
-    local mem_raw="$(free -b | grep -i mem)"
-    local total_mem_raw=$(echo $mem_raw | awk '{print $2}')
-    local used_mem_raw=$(echo $mem_raw | awk '{print $3}')
-    local mem="$(free -h --si | grep -i mem)";
-    local total_mem=$(echo $mem | awk '{print $2}')
-    local used_mem=$(echo $mem | awk '{print $3}')
-    local mem_percentage="$(( ( $used_mem_raw * 100 ) / $total_mem_raw ))"
-    local swap_raw="$(free -b | grep -i swap)"
-    local total_swap_raw=$(echo $swap_raw | awk '{print $2}')
-    local used_swap_raw=$(echo $swap_raw | awk '{print $3}')
-    local swap="$(free -h --si | grep -i swap)";
-    local total_swap=$(echo $swap | awk '{print $2}')
-    local used_swap=$(echo $swap | awk '{print $3}')
-    if [ ! "$total_swap_raw" == "0" ]; then
-        local swap_percentage="$(( ( $used_swap_raw * 100 ) / $total_swap_raw ))"
-    else
-        local swap_percentage="0"
-    fi
-    local cpu_raw="$(lscpu)"
-    local cpu_count=$(echo "$cpu_raw" | grep -i "^cpu(s):" | awk -F: '{print $2}' | xargs)
-    local cpu_name=$(echo "$cpu_raw" | grep -i "model name" | awk -F: '{print $2}' | xargs)
-    local bash_version=$(bash  --version | head -1 | _parse_version)
-
-    echo -e "\033[1;36mHardware\033[0m"
-    echo -en "\t\033[1mCPU\033[0m: " && echo "$cpu_name ($cpu_count)"
-    echo -en "\t\033[1mArch\033[0m: " && echo "$arch"
-    echo -en "\t\033[1mRAM\033[0m: " && echo "$used_mem / $total_mem ($mem_percentage %)"
-    if [ ! "$swap_percentage" == "0" ]; then
-        echo -en "\t\033[1mSwap\033[0m: " && echo "$used_swap / $total_swap ($swap_percentage %)"
-    fi
-    while read line; do
-        local dir=$(echo $line | awk '{print $7}')
-        local percent=$(echo $line | awk '{print $6}')
-        local total_sp=$(echo $line | awk '{print $3}')
-        local used_sp=$(echo $line | awk '{print $4}')
-        local fs=$(echo $line | awk '{print $2}')
-        echo -en "\t\033[1mDisk\033[0m: " && echo "($dir): $used_sp / $total_sp ($percent) [$fs]"
-    done <<< $(df --si -T | grep "^/" | grep -v -F /boot)
-    echo -e "\033[1;36mSoftware\033[0m"
-    echo -en "\t\033[1mOS\033[0m: " && echo "$distro"
-    echo -en "\t\033[1mKernel\033[0m: " && echo "$kernel"
-    echo -en "\t\033[1mHost\033[0m: " && echo "$(hostname)"
-    echo -en "\t\033[1mShell\033[0m: " && echo "bash $bash_version"
-    local termii=$(basename "$(cat "/proc/$PPID/comm")");
-    if [ ! "$termii" == "" ]; then
-        echo -en "\t\033[1mTerminal\033[0m: " && echo "$termii"
-    fi
-    if [ ! "$(type -t git)" == "" ]; then
-        echo -en "\t  \033[1mgit\033[0m: " && git --version | _parse_version
-    fi
-    if [ ! "$(type -t docker)" == "" ]; then
-        echo -en "\t  \033[1mdocker\033[0m: " && docker -v | _parse_version
-    fi
-    if [ ! "$(type -t javac)" == "" ]; then
-        echo -en "\t  \033[1mJava\033[0m: " && javac -version | _parse_version
-    fi
 }
 
 _parse_version() {

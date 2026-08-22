@@ -26,6 +26,7 @@ if [ ! "$(type -t mise)" == "" ]; then
         --allow-read ~/.local/share/mise \
         --allow-read ~/.local/bin \
         --allow-read ~/.config \
+        --allow-read ~/.gitconfig \
         --allow-write ~/.cache \
         --allow-write ~/.rustup \
         --allow-write ~/.cargo \

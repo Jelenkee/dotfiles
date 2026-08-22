@@ -118,14 +118,14 @@ cd() {
     local _arr2
     local dia
     
-    readarray -t -d '' _arr1 < <(find -L . -mindepth $len -maxdepth $len -type d -iname "*${last_arg}*" -print0)
+    readarray -t -d '' _arr1 < <(find -L . -mindepth $len -maxdepth $len -type d -iname "*${last_arg}*" -print0 2>/dev/null)
     dia=$(_df_search_dir _arr1[@] args[@])
     if [ ! "$dia" == "" ]; then
         builtin cd "$dia" && zz -a
         return
     fi
     
-    readarray -t -d '' _arr2 < <(find -L . -mindepth $plus_len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0)
+    readarray -t -d '' _arr2 < <(find -L . -mindepth $plus_len -maxdepth $plus_len -type d -iname "*${last_arg}*" -print0 2>/dev/null)
     dia=$(_df_search_dir _arr2[@] args[@])
     if [ ! "$dia" == "" ]; then
         builtin cd "$dia" && zz -a
