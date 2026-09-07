@@ -28,7 +28,6 @@ _df_init() {
         alias push="git push --set-upstream origin \$(git rev-parse --abbrev-ref HEAD)"
     fi
     alias sudo="sudo "
-    alias eecho="echo \"\$@\" 1>&2"
     alias ll="ls -lA"
     alias lisa="ls -lisa"
     alias sl="ls"

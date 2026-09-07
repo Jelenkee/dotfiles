@@ -23,6 +23,7 @@ unapply: mise
 
 mise:
 	@if ! type mise > /dev/null 2>&1; then \
+		make delete; \
 		curl https://mise.run | sh; \
 		if mise version 2>&1 | grep -iq glibc; then \
 			export MISE_INSTALL_MUSL=1 \

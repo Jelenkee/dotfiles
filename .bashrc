@@ -1,9 +1,21 @@
  # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-if [ -f ~/.startup.sh ]; then
-    . ~/.startup.sh
-fi
+# envs
+for e in "$HOME/.cargo/env" "$HOME/.deno/env"; do
+    if [ -e "$e" ]; then
+        . "$e"
+    fi
+done
+unset e
+
+# path decoration
+for p in "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.deno/bin"; do
+    if ! echo "$PATH" | grep -q -F "$p"; then
+        PATH="${p}:${PATH}"
+    fi
+done
+unset p
 
 # source scripts
 for f in ~/.scripts/*; do

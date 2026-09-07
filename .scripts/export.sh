@@ -1,9 +1,3 @@
-__local_bin="$HOME/.local/bin"
-if ! echo "$PATH" | grep -q -F "$__local_bin"; then
-    PATH="${__local_bin}:${PATH}"
-fi
-unset __local_bin
-
 if [ "$SSH_TTY" != "" ]; then
     export TERM="xterm"
 fi

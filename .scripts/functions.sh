@@ -14,6 +14,10 @@ if [ "$_df_is_sudo" == "false" ]; then
     }
 fi
 
+eecho() {
+    echo "$@" >&2
+}
+
 up() {
     if [ ! "$(type -t dockar)" == "" ]; then
         for ii in $(dockar ps -q); do
@@ -144,9 +148,6 @@ erase() {
     fi
     if [ ! "$(type -t npm)" == "" ]; then
         npm cache verify
-    fi
-    if [ ! "$(type -t mise)" == "" ]; then
-        mise prune -y
     fi
 }
 
@@ -371,3 +372,30 @@ harden_vps() {
 
 }
 
+repo_dump() {
+    if ! git rev-parse --is-inside-work-tree 2>/dev/null 1>/dev/null; then
+        echo "no git repo"
+        return 1
+    fi
+    local output="repo_out.txt"
+    echo "##### START #####" > $output
+    echo >> $output
+    while IFS= read -r -d '' file; do
+        if [[ "$file" == *".git/"* ]]; then
+            continue
+        fi
+        if git check-ignore "$file"; then
+            continue
+        fi
+        if [[ "$file" == *"$output" ]]; then
+            continue
+        fi
+        echo "### $file ###" >> $output
+        echo >> $output
+        cat "$file" >> $output
+        echo >> $output
+    done < <(find . -type f -print0)
+
+    echo >> $output
+    echo "##### END #####" >> $output
+}

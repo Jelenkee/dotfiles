@@ -22,6 +22,7 @@ if [ ! "$(type -t git)" == "" ]; then
     git config --global alias.s 'status -s'
     git config --global alias.pul 'pull'
     git config --global alias.pus 'push'
+    git config --global alias.undo 'reset HEAD~1'
     git config --global push.autoSetupRemote true
     git config --global core.editor nano
 fi
