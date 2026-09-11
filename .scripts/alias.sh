@@ -8,6 +8,7 @@ _df_init() {
     _set_alias_if_not_present "ranger" "yazi"
     _set_alias_if_not_present "y" "yazi"
     _set_alias_if_not_present "fetch" "ffetch"
+    _set_alias_if_not_present "ff" "fastfetch"
 
     if [ ! "$(type -t netstat)" == "" ]; then
         alias ports="netstat -tupln"

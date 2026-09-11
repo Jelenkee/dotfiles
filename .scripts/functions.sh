@@ -63,8 +63,10 @@ up() {
         mise bootstrap -y
         mise up --inactive -y
     fi
-    if [ ! "$(type -t pi)" == "" ]; then
+    if [ "$(type -t pi)" == "alias" ] && mise ls | grep -q "^pi"; then
         eval pi update --extensions
+    elif [ ! "$(type -t pi)" == "" ]; then
+        pi update --extensions
     fi
 }
 
@@ -129,7 +131,7 @@ erase() {
     rm -rf ~/.cargo/registry/src
     rm -rf ~/.cargo/registry/cache
     if [ ! "$(type -t cargo)" == "" ]; then
-        find ~ -path ~/.rustup -prune -o -path ~/.cargo -prune -o -name 'Cargo.toml' -exec cargo clean --manifest-path {} \; -exec cargo clean -r --manifest-path {} \;
+        find ~ -type f -name Cargo.toml -execdir bash -c 'test -d target && rm -rf target 2> /dev/null && echo "Erased $(pwd)"' \;
     fi
     if [ ! "$(type -t pacman)" == "" ]; then
         sudo pacman -Rcs $(pacman -Qdtq)
