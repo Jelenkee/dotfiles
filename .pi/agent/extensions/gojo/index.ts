@@ -220,6 +220,7 @@ function setupTools(pi: ExtensionAPI) {
       promptSnippet: "Does nothing",
       promptGuidelines: [
         "When using bash tool, always use absolute paths (e.g. /home/joe/awesome) or relative paths starting with './' (e.g ./projects/penny)",
+        "Do not use git commands which change the state of the repository (e.g. add, commit, push). Do not use them!",
       ],
       parameters: Type.Object({
         _: Type.Enum(["_"])

@@ -392,6 +392,9 @@ repo_dump() {
         if [[ "$file" == *"$output" ]]; then
             continue
         fi
+        if file --mime-encodung "$file" | grep -qF "binary"; then
+            continue
+        fi
         echo "### $file ###" >> $output
         echo >> $output
         cat "$file" >> $output

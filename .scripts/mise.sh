@@ -1,12 +1,5 @@
 _df_highest_git_repo() {
-    (
-        local _df_git="";
-        while git status > /dev/null 2>&1; do
-            cd ..
-            break
-        done
-        echo $PWD
-    )
+    git rev-parse --show-toplevel 2>/dev/null | pwd
 }
 
 if [ ! "$(type -t mise)" == "" ]; then
