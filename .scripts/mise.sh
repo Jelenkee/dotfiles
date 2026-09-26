@@ -1,5 +1,20 @@
 _df_highest_git_repo() {
-    git rev-parse --show-toplevel 2>/dev/null | pwd
+    if ! git rev-parse --show-toplevel 2>/dev/null 1>2; then
+        pwd
+        return
+    fi
+    (
+        local result="$(pwd)";
+        while true; do
+            local result2="$(git rev-parse --show-toplevel 2> /dev/null)"
+            if [ "$result2" == "" ]; then
+                echo "$result"
+                return;
+            fi
+            result="$result2"
+            builtin cd ..
+        done
+    )
 }
 
 if [ ! "$(type -t mise)" == "" ]; then

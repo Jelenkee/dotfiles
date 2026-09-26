@@ -63,7 +63,7 @@ export async function callLLM(model: Model<Api> | string, messages: string[], sy
     if (typeof model === "string") {
         model = ctx.modelRegistry.getAvailable().filter(mod => mod.id === model)[0];
     }
-    const rawCacheKey = `${model.id}_${messages.join(",")}_${systemPrompt}`;
+    const rawCacheKey = `${model.id}_${messages.join(",")}_${systemPrompt ?? ""}`;
     const cacheKey = createHash("sha256").update(rawCacheKey).digest("hex");
     const cachedValue = await llmCache.get(cacheKey);
     if (cachedValue) {
