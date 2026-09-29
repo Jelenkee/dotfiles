@@ -1,5 +1,5 @@
 _df_highest_git_repo() {
-    if ! git rev-parse --show-toplevel 2>/dev/null 1>2; then
+    if ! git rev-parse --show-toplevel 2>/dev/null 1>&2; then
         pwd
         return
     fi
