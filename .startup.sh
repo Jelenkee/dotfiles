@@ -1,6 +1,6 @@
 filename="/tmp/aJ4ch1hJux6CCtRu"
 if [ -f "$filename" ]; then
-    return
+    exit
 fi
 touch "$filename"
 unset filename

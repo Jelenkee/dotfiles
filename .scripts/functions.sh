@@ -147,6 +147,7 @@ erase() {
         sudo docker image prune -f
         sudo docker buildx prune -f
         sudo docker volume prune -f
+        sudo docker system prune -af
     fi
     if [ ! "$(type -t npm)" == "" ]; then
         npm cache verify
@@ -307,12 +308,6 @@ if [ ! "$(type -t docker)" == "" ]; then
     }
 
     complete -F _df_comp_docom docom
-fi
-
-if [ "$(type -t npx)" == "" ] && [ ! "$(type -t deno)" == "" ]; then
-    npx() {
-        deno run -A npm:${@}
-    }
 fi
 
 harden_vps() {

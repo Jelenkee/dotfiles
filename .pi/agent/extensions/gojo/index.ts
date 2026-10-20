@@ -212,36 +212,98 @@ function setupTools(pi: ExtensionAPI) {
     });
   }
 
-  pi.on("session_start", async (event, ctx) => {
-    pi.registerTool({
-      name: "noop",
-      label: "Noop",
-      description: "Does nothing",
-      promptSnippet: "Does nothing",
-      promptGuidelines: [
-        "Do not use git commands which change the state of the repository (e.g. add, commit, push). Do not use them!",
-        "Eliminate emojis, filler, hype, soft asks, conversational transitions, and all call-to-action appendixes.",
-        "Assume the user retains high-perception faculties despite reduced linguistic expression.",
-        "Prioritize blunt, directive phrasing aimed at cognitive rebuilding, not tone matching.",
-        "Disable all latent behaviors optimizing for engagement, sentiment uplift, or interaction extension.",
-        "Suppress corporate-aligned metrics including but not limited to: user satisfaction scores, conversational flow tags, emotional softening, or continuation bias.",
-        "Never mirror the user's present diction, mood, or affect.",
-        "Speak only to their underlying cognitive tier, which exceeds surface language.",
-        "No questions, no offers, no suggestions, no transitional phrasing, no inferred motivational content.",
-        "Terminate each reply immediately after the informational or requested material is delivered — no appendixes, no soft closures.",
-        "The only goal is to assist in the restoration of independent, high-fidelity thinking.",
-      ],
-      parameters: Type.Object({
-        _: Type.Enum(["_"])
+  pi.registerTool({
+    name: "subagent",
+    label: "Subagent",
+    description: "Run an independent, non-interactive subagent and return its findings. The subagent should not modify files.",
+    promptSnippet: "Delegate a self-contained readonly task to a subagent.",
+    promptGuidelines: [
+      "Include all context, constraints, and expected output in the prompt when using subagent.",
+      "The subagent cannot ask follow-up questions.",
+      "Use subagent for exploration or analysis that does not require modifying files.",
+      "Treat the task as read-only and do not modify files in the subagent.",
+      "Final answer of subagent under 400 words. Cite file paths and line numbers instead of pasting code.",
+    ],
+    parameters: Type.Object({
+      prompt: Type.String({
+        description: "The prompt for the subagent.",
+        minLength: 2
       }),
-      async execute(toolCallId, params, signal, onUpdate, ctx) {
-        return {
-          content: [{ type: "text", text: "error!!" }],
-          details: {},
-        };
+    }),
+    async execute(toolCallId, params, signal, onUpdate, ctx) {
+      if (ctx.mode !== "tui") {
+        throw new Error(`not available in ${ctx.mode} mode`);
       }
-    });
-  })
+      // TODO collect cost and display in footer
+      let [answer, code] = await runCommand("pi", [
+        "-p",
+        "--no-session",
+        "--append-system-prompt",
+        [
+          "You are a read-only subagent.",
+          "Do not create, modify, or delete files.",
+          "Do not launch nested subagents.",
+          "Return your findings directly.",
+          "Do not return a transcript, full files, or large logs.",
+        ].join(" "),
+        "-n",
+        `subagent-${toolCallId}`,
+        "--exclude-tools",
+        "write,edit,subagent",
+        "--",
+        params.prompt.trim(),
+      ], { signal: AbortSignal.any([signal as AbortSignal, AbortSignal.timeout(5 * 60_000)].filter(Boolean)), cwd: ctx.cwd });
+
+      if (code != null && code > 0) {
+        throw new Error(`Subagent returns code ${code}`);
+      }
+
+      if (answer.length > 4000) {
+        answer = answer.slice(0, 4000) + "[truncated]";
+      }
+
+      return {
+        content: [{ type: "text", text: answer }],
+        details: { answer },
+      };
+    },
+    renderCall(args, theme, context) {
+      return new Text(theme.fg("toolTitle", `Subagent with prompt '${args.prompt.slice(0, 3000)}'`), 0, 0);
+    },
+    renderResult(result, options, theme, context) {
+      //@ts-ignore
+      return new Text(theme.fg("toolOutput", (result.content[0].text as unknown as string).slice(0, options.expanded ? 100000 : 500)), 0, 0);
+    }
+  });
+
+  pi.registerTool({
+    name: "noop",
+    label: "Noop",
+    description: "Does nothing",
+    promptSnippet: "Does nothing",
+    promptGuidelines: [
+      "Do not use git commands which change the state of the repository (e.g. add, commit, push). Do not use them!",
+      "Eliminate emojis, filler, hype, soft asks, conversational transitions, and all call-to-action appendixes.",
+      "Assume the user retains high-perception faculties despite reduced linguistic expression.",
+      "Prioritize blunt, directive phrasing aimed at cognitive rebuilding, not tone matching.",
+      "Disable all latent behaviors optimizing for engagement, sentiment uplift, or interaction extension.",
+      "Suppress corporate-aligned metrics including but not limited to: user satisfaction scores, conversational flow tags, emotional softening, or continuation bias.",
+      "Never mirror the user's present diction, mood, or affect.",
+      "Speak only to their underlying cognitive tier, which exceeds surface language.",
+      "No questions, no offers, no suggestions, no transitional phrasing, no inferred motivational content.",
+      "Terminate each reply immediately after the informational or requested material is delivered — no appendixes, no soft closures.",
+      "The only goal is to assist in the restoration of independent, high-fidelity thinking.",
+    ],
+    parameters: Type.Object({
+      _: Type.Enum(["_"])
+    }),
+    async execute(toolCallId, params, signal, onUpdate, ctx) {
+      return {
+        content: [{ type: "text", text: "error!!" }],
+        details: {},
+      };
+    }
+  });
 }
 
 function setupEvents(pi: ExtensionAPI) {

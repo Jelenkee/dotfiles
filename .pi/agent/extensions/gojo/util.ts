@@ -112,13 +112,14 @@ export function createCookieFetch() {
     return fetch2 satisfies typeof fetch;
 }
 
-export async function runCommand(command: string, args: string[], options?: SpawnOptionsWithoutStdio): Promise<[string , number|null]> {
-    const stdout = await new Promise<[string , number|null]>((resolve, reject) => {
+export async function runCommand(command: string, args: string[], options?: SpawnOptionsWithoutStdio): Promise<[string, number | null]> {
+    const stdout = await new Promise<[string, number | null]>((resolve, reject) => {
         const child = spawn(command, args, options);
+        child.stdin.end();
         let stdout = "";
         child.stdout.on("data", (data) => (stdout += data));
         child.on("close", code => {
-            resolve([stdout.trim(),code])
+            resolve([stdout.trim(), code])
         });
         child.on("error", error => {
             reject(error)
