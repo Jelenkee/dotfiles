@@ -1,10 +1,11 @@
 import { Type } from "typebox";
-import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, TurnEndEvent } from "@earendil-works/pi-coding-agent";
 import { Text } from "@earendil-works/pi-tui";
 import { TextContent } from "@earendil-works/pi-ai/compat";
 import { resolve, join, relative, isAbsolute } from "path";
-import { callLLM, createCookieFetch, runCommand } from "./util"
+import { callLLM, createCookieFetch, debug, runCommand } from "./util"
 import { homedir } from "os";
+import { spawn } from "child_process";
 
 export default function (pi: ExtensionAPI) {
   setupTools(pi);
@@ -222,7 +223,6 @@ function setupTools(pi: ExtensionAPI) {
       "The subagent cannot ask follow-up questions.",
       "Use subagent for exploration or analysis that does not require modifying files.",
       "Treat the task as read-only and do not modify files in the subagent.",
-      "Final answer of subagent under 400 words. Cite file paths and line numbers instead of pasting code.",
     ],
     parameters: Type.Object({
       prompt: Type.String({
@@ -234,9 +234,10 @@ function setupTools(pi: ExtensionAPI) {
       if (ctx.mode !== "tui") {
         throw new Error(`not available in ${ctx.mode} mode`);
       }
-      // TODO collect cost and display in footer
-      let [answer, code] = await runCommand("pi", [
+      const child = spawn("pi", [
         "-p",
+        "--mode",
+        "json",
         "--no-session",
         "--append-system-prompt",
         [
@@ -244,7 +245,7 @@ function setupTools(pi: ExtensionAPI) {
           "Do not create, modify, or delete files.",
           "Do not launch nested subagents.",
           "Return your findings directly.",
-          "Do not return a transcript, full files, or large logs.",
+          "Do not return a transcript, full files, or large logs. Keep it short",
         ].join(" "),
         "-n",
         `subagent-${toolCallId}`,
@@ -253,7 +254,43 @@ function setupTools(pi: ExtensionAPI) {
         "--",
         params.prompt.trim(),
       ], { signal: AbortSignal.any([signal as AbortSignal, AbortSignal.timeout(5 * 60_000)].filter(Boolean)), cwd: ctx.cwd });
+      child.stdin.end();
+      type Event = { type: string, usage?: { cost: { total: number } } };
+      const allEvents: Event[] = [];
+      let answer = "";
+      let totalCost = 0;
+      child.stdout.on("data", (data) => {
+        const lines = (data.toString() as string).split("\n").map(s => s.trim()).filter(Boolean);
+        const events = lines.map(line => {
+          try {
+            return JSON.parse(line);
+          } catch {
+            return null;
+          }
+        });
+        allEvents.push(...events);
+      });
+      const code = await new Promise<number | null>((resolve, reject) => {
+        child.on("close", code => {
+          resolve(code)
+        });
+        child.on("error", error => {
+          reject(error)
+        })
+      });
 
+      for (const event of allEvents) {
+        if (event.type === "turn_end") {
+          const turnEvent = event as (TurnEndEvent);
+          //@ts-ignore
+          const content = turnEvent.message?.content?.[0];
+          if (content && content.type === "text") {
+            answer = content.text;
+          }
+          //@ts-ignore
+          totalCost += turnEvent.message?.usage?.cost?.total ?? 0;
+        }
+      }
       if (code != null && code > 0) {
         throw new Error(`Subagent returns code ${code}`);
       }
@@ -264,7 +301,7 @@ function setupTools(pi: ExtensionAPI) {
 
       return {
         content: [{ type: "text", text: answer }],
-        details: { answer },
+        details: { totalCost },
       };
     },
     renderCall(args, theme, context) {
@@ -272,7 +309,7 @@ function setupTools(pi: ExtensionAPI) {
     },
     renderResult(result, options, theme, context) {
       //@ts-ignore
-      return new Text(theme.fg("toolOutput", (result.content[0].text as unknown as string).slice(0, options.expanded ? 100000 : 500)), 0, 0);
+      return new Text(theme.fg("toolOutput", `[cost: $${result.details.totalCost}] `+ (result.content[0].text as unknown as string).slice(0, options.expanded ? 100000 : 500)), 0, 0);
     }
   });
 

@@ -6,6 +6,7 @@ import { createHash } from "crypto";
 import { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { completeSimple } from "@earendil-works/pi-ai/compat";
 import { spawn, SpawnOptionsWithoutStdio } from "child_process";
+import { appendFileSync } from "fs";
 
 export class Cache {
     name: string;
@@ -126,4 +127,10 @@ export async function runCommand(command: string, args: string[], options?: Spaw
         })
     });
     return stdout
+}
+
+const SESSION_ID = (Math.random() * 1e18).toString(16);
+export function debug(text: string) {
+    text = `${new Date().toISOString()}: ${text}\n`
+    appendFileSync(`/tmp/pi_${SESSION_ID}.log`, text);
 }
