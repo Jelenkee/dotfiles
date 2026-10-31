@@ -1,5 +1,5 @@
 [settings]
-dotfiles.root = "{{ pwd }}"
+dotfiles.root = "{{ cwd }}"
 dotfiles.default_mode = "symlink-each"
 
 [dotfiles]
