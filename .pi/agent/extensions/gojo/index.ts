@@ -212,106 +212,145 @@ function setupTools(pi: ExtensionAPI) {
       }
     });
   }
-
-  pi.registerTool({
-    name: "subagent",
-    label: "Subagent",
-    description: "Run an independent, non-interactive subagent and return its findings. The subagent should not modify files.",
-    promptSnippet: "Delegate a self-contained readonly task to a subagent.",
-    promptGuidelines: [
-      "Include all context, constraints, and expected output in the prompt when using subagent.",
-      "The subagent cannot ask follow-up questions.",
-      "Use subagent for exploration or analysis that does not require modifying files.",
-      "Treat the task as read-only and do not modify files in the subagent.",
-    ],
-    parameters: Type.Object({
-      prompt: Type.String({
-        description: "The prompt for the subagent.",
-        minLength: 2
-      }),
-    }),
-    async execute(toolCallId, params, signal, onUpdate, ctx) {
-      if (ctx.mode !== "tui") {
-        throw new Error(`not available in ${ctx.mode} mode`);
-      }
-      const child = spawn("pi", [
-        "-p",
-        "--mode",
-        "json",
-        "--no-session",
-        "--append-system-prompt",
-        [
-          "You are a read-only subagent.",
-          "Do not create, modify, or delete files.",
-          "Do not launch nested subagents.",
-          "Return your findings directly.",
-          "Do not return a transcript, full files, or large logs. Keep it short",
-        ].join(" "),
-        "-n",
-        `subagent-${toolCallId}`,
-        "--exclude-tools",
-        "write,edit,subagent",
-        "--",
-        params.prompt.trim(),
-      ], { signal: AbortSignal.any([signal as AbortSignal, AbortSignal.timeout(5 * 60_000)].filter(Boolean)), cwd: ctx.cwd });
-      child.stdin.end();
-      type Event = { type: string, usage?: { cost: { total: number } } };
-      const allEvents: Event[] = [];
-      let answer = "";
-      let totalCost = 0;
-      child.stdout.on("data", (data) => {
-        const lines = (data.toString() as string).split("\n").map(s => s.trim()).filter(Boolean);
-        const events = lines.map(line => {
-          try {
-            return JSON.parse(line);
-          } catch {
-            return null;
-          }
-        });
-        allEvents.push(...events);
-      });
-      const code = await new Promise<number | null>((resolve, reject) => {
-        child.on("close", code => {
-          resolve(code)
-        });
-        child.on("error", error => {
-          reject(error)
-        })
-      });
-
-      for (const event of allEvents) {
-        if (event.type === "turn_end") {
-          const turnEvent = event as (TurnEndEvent);
-          //@ts-ignore
-          const content = turnEvent.message?.content?.[0];
-          if (content && content.type === "text") {
-            answer = content.text;
-          }
-          //@ts-ignore
-          totalCost += turnEvent.message?.usage?.cost?.total ?? 0;
-        }
-      }
-      if (code != null && code > 0) {
-        throw new Error(`Subagent returns code ${code}`);
-      }
-
-      if (answer.length > 4000) {
-        answer = answer.slice(0, 4000) + "[truncated]";
-      }
-
-      return {
-        content: [{ type: "text", text: answer }],
-        details: { totalCost },
-      };
-    },
-    renderCall(args, theme, context) {
-      return new Text(theme.fg("toolTitle", `Subagent with prompt '${args.prompt.slice(0, 3000)}'`), 0, 0);
-    },
-    renderResult(result, options, theme, context) {
-      //@ts-ignore
-      return new Text(theme.fg("toolOutput", `[cost: $${result.details.totalCost}] `+ (result.content[0].text as unknown as string).slice(0, options.expanded ? 100000 : 500)), 0, 0);
+  for (const readonly of [false, true]) {
+    const name = readonly ? "readonly_subagent" : "subagent";
+    const label = readonly ? "Readonly subagent" : "Subagent";
+    const description = readonly ? "Run an independent, non-interactive subagent in a fresh session (no memory of this conversation) and return a short summary of its findings. Intended for read-only exploration and analysis; it is instructed not to modify files." : "Run an independent, non-interactive subagent in a fresh session (no memory of this conversation) that can read and modify files, and return a short summary of what it did.";
+    const promptSnippet = readonly ? "Delegate a self-contained read-only investigation (search, analysis, review) to a subagent." : "Delegate a self-contained task that may modify files to a subagent.";
+    const promptGuidelines = [
+      "The subagent starts with no context and cannot ask follow-up questions. Put everything it needs in the prompt: the goal, relevant file paths, constraints, and what a finished answer looks like.",
+      "The result is a short summary (max ~4000 characters) and the run times out after 10 minutes. Scope the task to fit.",
+      "Do not delegate trivial tasks, tasks that need user input, or tasks that depend on conversation context you haven't included in the prompt.",
+      "Treat the result as a report, not ground truth. Verify important claims (read the cited files) before acting on them.",
+    ];
+    if (readonly) {
+      promptGuidelines.push(
+        "Use readonly_subagent for exploration, code search, and analysis. Use subagent if the task requires changing files.",
+      );
+    } else {
+      promptGuidelines.push(
+        "Give subagent a narrowly scoped task and name the files or directories it may touch.",
+        "Do not run several working subagents on overlapping files.",
+      );
     }
-  });
+    pi.registerTool({
+      name,
+      label,
+      description,
+      promptSnippet,
+      promptGuidelines,
+      parameters: Type.Object({
+        prompt: Type.String({
+          description: "The prompt for the subagent.",
+          minLength: 2
+        }),
+      }),
+      async execute(toolCallId, params, signal, onUpdate, ctx) {
+        if (ctx.mode !== "tui") {
+          throw new Error(`not available in ${ctx.mode} mode`);
+        }
+        const excludeTools = readonly ? "write,edit,subagent,readonly_subagent" : "subagent,readonly_subagent";
+        const rules = [
+          "You are a subagent working on a single delegated task for another agent. You cannot ask questions; if something is ambiguous, make the most reasonable assumption and state it in your answer.",
+          "Your final message is the only thing the caller sees. Make it self-contained and under 4000 characters.",
+          "Do not include transcripts, full file contents, or large logs in the response. Reference files as path:line instead.",
+          "Lead with the answer or outcome, then give supporting evidence.",
+          "Distinguish what you verified from what you inferred. If you could not complete the task or hit an error, say so plainly instead of guessing.",
+        ];
+
+        if (readonly) {
+          rules.push(
+            "You are READ-ONLY. Do not create, modify, move, or delete files.",
+            "Use the shell only for inspection (ls, cat, grep, rg, git log/diff/show, etc.).",
+          );
+        } else {
+          rules.push(
+            "You may modify files, but only those needed for the task. Do not make unrelated refactors or formatting changes.",
+            "In your final message list every file you changed, with a one-line description of each change.",
+          );
+        }
+        const child = spawn("pi", [
+          "-p",
+          "--mode",
+          "json",
+          "--model",
+          ctx.model?.id ?? ctx.modelRegistry.getAvailable()[0].id,
+          "--no-session",
+          "--append-system-prompt",
+          rules.map(r => `- ${r}`).join("\n"),
+          "-n",
+          `subagent-${toolCallId}`,
+          "--exclude-tools",
+          excludeTools,
+          "--",
+          params.prompt.trim(),
+        ], { signal: AbortSignal.any([signal as AbortSignal, AbortSignal.timeout((readonly ? 5 : 10) * 60_000)].filter(Boolean)), cwd: ctx.cwd });
+        child.stdin.end();
+        type Event = { type: string, usage?: { cost: { total: number } } };
+        const allEvents: Event[] = [];
+        let answer = "";
+        let totalCost = 0;
+        child.stdout.on("data", (data) => {
+          const lines = (data.toString() as string).split("\n").map(s => s.trim()).filter(Boolean);
+          const events = lines.map(line => {
+            try {
+              return JSON.parse(line);
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean)
+          .filter(e=>e.type === "turn_end");
+          allEvents.push(...events);
+        });
+        child.stderr.on("data", (data) => {
+        });
+        const code = await new Promise<number | null>((resolve, reject) => {
+          child.on("close", code => {
+            resolve(code)
+          });
+          child.on("error", error => {
+            reject(error)
+          })
+        });
+
+        for (const event of allEvents) {
+          if (event.type === "turn_end") {
+            const turnEvent = event as (TurnEndEvent);
+            //@ts-ignore
+            const content = turnEvent.message?.content?.filter(c => c.type === "text").at(-1);
+            if (content && content.type === "text") {
+              answer = content.text;
+            }
+            //@ts-ignore
+            totalCost += turnEvent.message?.usage?.cost?.total ?? 0;
+          }
+        }
+        if (answer.length === 0) {
+          throw new Error("answer is empty. subagent is buggy. do not use it");
+        }
+        if (code != null && code > 0) {
+          throw new Error(`Subagent returns code ${code}`);
+        }
+
+        if (answer.length > 4000) {
+          answer = answer.slice(0, 4000) + " [truncated]";
+        }
+
+        return {
+          content: [{ type: "text", text: answer }],
+          details: { totalCost },
+        };
+      },
+      renderCall(args, theme, context) {
+        return new Text(theme.fg("toolTitle", `${readonly ? "Readonly " : ""}Subagent with prompt '${args.prompt.slice(0, context.expanded ? 3000 : 300)}'`), 0, 0);
+      },
+      renderResult(result, options, theme, context) {
+        //@ts-ignore
+        return new Text(theme.fg("toolOutput", `[cost: $${result.details.totalCost}] ` + (result.content[0].text as unknown as string).slice(0, options.expanded ? 100000 : 500)), 0, 0);
+      }
+    });
+  }
 
   pi.registerTool({
     name: "noop",
