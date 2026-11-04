@@ -131,7 +131,7 @@ erase() {
     rm -rf ~/.cargo/registry/src
     rm -rf ~/.cargo/registry/cache
     if [ ! "$(type -t cargo)" == "" ]; then
-        find ~ -type f -name Cargo.toml -execdir bash -c 'test -d target && rm -rf target 2> /dev/null && echo "Erased $(pwd)"' \;
+        find ~ -type f -name Cargo.toml -execdir bash -c 'test -d target && rm -rf target/*/deps 2> /dev/null && rm -rf target/*/incremental 2> /dev/null && echo "Erased $(pwd)"' \;
     fi
     if [ ! "$(type -t pacman)" == "" ]; then
         sudo pacman -Rcs $(pacman -Qdtq)

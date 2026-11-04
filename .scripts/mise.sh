@@ -17,7 +17,7 @@ _df_highest_git_repo() {
     )
 }
 
-if [ ! "$(type -t mise)" == "" ]; then
+if [ ! "$(type -t mise)" == "" ] && [ "$(type -t pi)" == "file" ]; then
     dotlocation=""
     if [ -L ~/.do_not_delete ]; then
         dotlocation=$(dirname $(readlink -f ~/.do_not_delete))
@@ -43,7 +43,7 @@ if [ ! "$(type -t mise)" == "" ]; then
         --allow-write \$(_df_highest_git_repo) \
         --allow-write /tmp \
         --allow-write ~/.pi \
-        pi -- pi"
+        -- pi"
     unset dotlocation
     unset wsllocation
 fi

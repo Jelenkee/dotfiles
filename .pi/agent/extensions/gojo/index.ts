@@ -299,8 +299,8 @@ function setupTools(pi: ExtensionAPI) {
               return null;
             }
           })
-          .filter(Boolean)
-          .filter(e=>e.type === "turn_end");
+            .filter(Boolean)
+            .filter(e => e.type === "turn_end");
           allEvents.push(...events);
         });
         child.stderr.on("data", (data) => {

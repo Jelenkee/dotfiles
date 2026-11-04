@@ -3,7 +3,7 @@ import { accessSync, constants, existsSync, lstatSync, readdirSync, readlinkSync
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 
-populate()
+//populate()
 
 function populate() {
     const miseBinDir = join(homedir(), ".local", "share", "mise")

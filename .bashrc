@@ -17,6 +17,11 @@ for p in "$HOME/.local/bin" "$HOME/.cargo/bin" "$HOME/.deno/bin"; do
 done
 unset p
 
+# mise
+if [ ! "$(type -t mise)" == "" ]; then
+    source <(mise activate bash --no-hook-env)
+fi
+
 # source scripts
 for f in ~/.scripts/*; do
     . "$f"
@@ -68,13 +73,8 @@ if ! shopt -oq posix; then
     fi
 fi
 
-
 if [ -f ~/.localbashrc ]; then
     . ~/.localbashrc
-fi
-
-if [ ! "$(type -t mise)" == "" ]; then
-    source <(mise activate bash --no-hook-env)
 fi
 
 if [ "$DF_PROMPT_ID" == "" ]; then
