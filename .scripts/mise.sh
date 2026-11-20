@@ -23,7 +23,7 @@ if [ ! "$(type -t mise)" == "" ] && [ "$(type -t pi)" == "file" ]; then
         dotlocation=$(dirname $(readlink -f ~/.do_not_delete))
     fi
     if [ ! "$dotlocation" == "" ]; then
-        dotlocation="--allow-read ${dotlocation}/.pi"
+        dotlocation="--allow-read ${dotlocation}/.pi --allow-read ${dotlocation}/.config"
     fi
     wsllocation=""
     if [ -d "/mnt/wsl" ]; then

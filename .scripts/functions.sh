@@ -63,10 +63,8 @@ up() {
         mise bootstrap -y
         mise up --inactive -y
     fi
-    if [ "$(type -t pi)" == "alias" ] && mise ls | grep -q "^pi"; then
-        eval pi update --extensions
-    elif [ ! "$(type -t pi)" == "" ]; then
-        pi update --extensions
+    if [ ! "$(type -t pi)" == "" ]; then
+        command pi update --extensions
     fi
 }
 
@@ -381,13 +379,13 @@ repo_dump() {
         if [[ "$file" == *".git/"* ]]; then
             continue
         fi
-        if git check-ignore "$file"; then
+        if git check-ignore -q "$file"; then
             continue
         fi
         if [[ "$file" == *"$output" ]]; then
             continue
         fi
-        if file --mime-encodung "$file" | grep -qF "binary"; then
+        if file --mime-encoding "$file" | grep -qF "binary"; then
             continue
         fi
         echo "### $file ###" >> $output

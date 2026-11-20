@@ -1,6 +1,3 @@
- # If not running interactively, don't do anything
-[[ $- != *i* ]] && return
-
 # envs
 for e in "$HOME/.cargo/env" "$HOME/.deno/env"; do
     if [ -e "$e" ]; then
@@ -21,6 +18,9 @@ unset p
 if [ ! "$(type -t mise)" == "" ]; then
     source <(mise activate bash --no-hook-env)
 fi
+
+ # If not running interactively, skip
+[[ $- != *i* ]] && return
 
 # source scripts
 for f in ~/.scripts/*; do

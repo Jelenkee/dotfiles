@@ -1,3 +1,6 @@
+[settings]
+activate_shims = false
+
 [tools]
 fastfetch = "latest"
 gdu = "latest"
